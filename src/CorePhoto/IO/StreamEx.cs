@@ -46,9 +46,9 @@ namespace CorePhoto.IO
             switch (byteOrder)
             {
                 case ByteOrder.LittleEndian:
-                    return (short)(bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24));
+                    return bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
                 case ByteOrder.BigEndian:
-                    return (short)((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]);
+                    return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
                 default:
                     throw new NotImplementedException();
             }

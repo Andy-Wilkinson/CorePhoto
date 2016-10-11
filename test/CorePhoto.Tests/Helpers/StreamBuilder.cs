@@ -1,11 +1,12 @@
 using System;
 using System.IO;
+using CorePhoto.IO;
 
 namespace CorePhoto.Tests.Helpers
 {
     public class StreamBuilder
     {
-        public StreamBuilder(StreamBuilderByteOrder byteOrder)
+        public StreamBuilder(ByteOrder byteOrder)
         {
             Stream = new MemoryStream();
             ByteOrder = byteOrder;
@@ -15,7 +16,7 @@ namespace CorePhoto.Tests.Helpers
         {
             get;
         }
-        public StreamBuilderByteOrder ByteOrder
+        public ByteOrder ByteOrder
         {
             get;
         }
@@ -53,8 +54,8 @@ namespace CorePhoto.Tests.Helpers
 
         public StreamBuilder WriteBytesEndianOrder(params byte[] value)
         {
-            if ((BitConverter.IsLittleEndian && ByteOrder == StreamBuilderByteOrder.BigEndian)
-            || (!BitConverter.IsLittleEndian && ByteOrder == StreamBuilderByteOrder.LittleEndian))
+            if ((BitConverter.IsLittleEndian && ByteOrder == ByteOrder.BigEndian)
+            || (!BitConverter.IsLittleEndian && ByteOrder == ByteOrder.LittleEndian))
                 Array.Reverse(value);
 
             Stream.Write(value, 0, value.Length);
