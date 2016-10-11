@@ -26,12 +26,12 @@ namespace CorePhoto.Tests.Helpers
             return new TestStreamWriter(stream, isLittleEndian);
         }
 
-        public static BinaryReader ToReader(this TestStreamWriter streamWriter)
+        public static Stream ToStream(this TestStreamWriter streamWriter)
         {
             var stream = streamWriter.Stream;
             stream.Flush();
             stream.Seek(0, SeekOrigin.Begin);
-            return new BinaryReader(stream);
+            return stream;
         }
 
         public static TestStreamWriter WithByte(this TestStreamWriter streamWriter, byte value)
@@ -62,11 +62,11 @@ namespace CorePhoto.Tests.Helpers
         {
             if (BitConverter.IsLittleEndian != streamWriter.IsLittleEndian)
                 Array.Reverse(value);
-            
+
             streamWriter.Stream.Write(value, 0, value.Length);
             return streamWriter;
         }
-        
+
         public class TestStreamWriter
         {
             public TestStreamWriter(Stream stream, bool isLittleEndian)

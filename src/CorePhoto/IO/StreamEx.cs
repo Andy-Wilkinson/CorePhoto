@@ -1,15 +1,33 @@
 using System;
 using System.IO;
-using CorePhoto.IO;
 
 namespace CorePhoto.IO
 {
-    public static class BinaryReaderEx
+    public static class StreamEx
     {
-        public static Int16 ReadInt16(this BinaryReader reader, ByteOrder byteOrder)
+        public static byte[] ReadBytes(this Stream stream, int count)
         {
-            byte[] bytes = reader.ReadBytes(2);
-            
+            byte[] buffer = new byte[count];
+            int offset = 0;
+
+            while (count > 0)
+            {
+                int bytesRead = stream.Read(buffer, offset, count);
+
+                if (bytesRead == 0)
+                    break;
+
+                offset += bytesRead;
+                count -= bytesRead;
+            }
+
+            return buffer;
+        }
+
+        public static Int16 ReadInt16(this Stream stream, ByteOrder byteOrder)
+        {
+            byte[] bytes = stream.ReadBytes(2);
+
             switch (byteOrder)
             {
                 case ByteOrder.LittleEndian:
@@ -21,10 +39,10 @@ namespace CorePhoto.IO
             }
         }
 
-        public static Int32 ReadInt32(this BinaryReader reader, ByteOrder byteOrder)
+        public static Int32 ReadInt32(this Stream stream, ByteOrder byteOrder)
         {
-            byte[] bytes = reader.ReadBytes(4);
-            
+            byte[] bytes = stream.ReadBytes(4);
+
             switch (byteOrder)
             {
                 case ByteOrder.LittleEndian:

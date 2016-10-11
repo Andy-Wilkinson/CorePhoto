@@ -1,4 +1,3 @@
-using System;
 using CorePhoto.IO;
 using CorePhoto.Tiff;
 using CorePhoto.Tests.Helpers;
@@ -9,13 +8,13 @@ namespace CorePhoto.Tests.Tiff
     public class TiffReaderTests
     {
         [Fact]
-        public void ReadHeader_ReadsCorrectly_LittleEndian() 
+        public void ReadHeader_ReadsCorrectly_LittleEndian()
         {
             var stream = StreamHelper.CreateStreamLittleEndian()
                                      .WithBytes(0x49, 0x49)
                                      .WithInt16(42)
                                      .WithInt32(12345)
-                                     .ToReader();
+                                     .ToStream();
 
             var header = TiffReader.ReadHeader(stream);
 
@@ -25,13 +24,13 @@ namespace CorePhoto.Tests.Tiff
         }
 
         [Fact]
-        public void ReadHeader_ReadsCorrectly_BigEndian() 
+        public void ReadHeader_ReadsCorrectly_BigEndian()
         {
             var stream = StreamHelper.CreateStreamBigEndian()
                                      .WithBytes(0x4D, 0x4D)
                                      .WithInt16(42)
                                      .WithInt32(12345)
-                                     .ToReader();
+                                     .ToStream();
 
             var header = TiffReader.ReadHeader(stream);
 

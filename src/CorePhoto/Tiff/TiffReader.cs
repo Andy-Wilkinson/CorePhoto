@@ -6,18 +6,18 @@ namespace CorePhoto.Tiff
 {
     public static class TiffReader
     {
-        public static TiffHeader ReadHeader(BinaryReader reader)
+        public static TiffHeader ReadHeader(Stream stream)
         {
-            ByteOrder byteOrder = ReadHeader_ByteOrder(reader);
-            int magicNumber = reader.ReadInt16(byteOrder);
-            int firstIfdOffset = reader.ReadInt32(byteOrder);
+            ByteOrder byteOrder = ReadHeader_ByteOrder(stream);
+            int magicNumber = stream.ReadInt16(byteOrder);
+            int firstIfdOffset = stream.ReadInt32(byteOrder);
 
             return new TiffHeader() { byteOrder = byteOrder, magicNumber = magicNumber, firstIfdOffset = firstIfdOffset };
         }
 
-        private static ByteOrder ReadHeader_ByteOrder(BinaryReader reader)
+        private static ByteOrder ReadHeader_ByteOrder(Stream stream)
         {
-            short byteOrderMarker = reader.ReadInt16();
+            short byteOrderMarker = stream.ReadInt16(ByteOrder.LittleEndian);
 
             switch (byteOrderMarker)
             {
