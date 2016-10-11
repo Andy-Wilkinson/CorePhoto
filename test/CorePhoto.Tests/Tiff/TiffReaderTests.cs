@@ -10,10 +10,10 @@ namespace CorePhoto.Tests.Tiff
         [Fact]
         public void ReadHeader_ReadsCorrectly_LittleEndian()
         {
-            var stream = StreamHelper.CreateStreamLittleEndian()
-                                     .WithBytes(0x49, 0x49)
-                                     .WithInt16(42)
-                                     .WithInt32(12345)
+            var stream = new StreamBuilder(StreamBuilderByteOrder.LittleEndian)
+                                     .WriteBytes(0x49, 0x49)
+                                     .WriteInt16(42)
+                                     .WriteInt32(12345)
                                      .ToStream();
 
             var header = TiffReader.ReadHeader(stream);
@@ -26,10 +26,10 @@ namespace CorePhoto.Tests.Tiff
         [Fact]
         public void ReadHeader_ReadsCorrectly_BigEndian()
         {
-            var stream = StreamHelper.CreateStreamBigEndian()
-                                     .WithBytes(0x4D, 0x4D)
-                                     .WithInt16(42)
-                                     .WithInt32(12345)
+            var stream = new StreamBuilder(StreamBuilderByteOrder.BigEndian)
+                                     .WriteBytes(0x4D, 0x4D)
+                                     .WriteInt16(42)
+                                     .WriteInt32(12345)
                                      .ToStream();
 
             var header = TiffReader.ReadHeader(stream);
