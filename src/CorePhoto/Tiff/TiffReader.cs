@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using CorePhoto.IO;
 
@@ -12,7 +11,10 @@ namespace CorePhoto.Tiff
             int magicNumber = stream.ReadInt16(byteOrder);
             int firstIfdOffset = stream.ReadInt32(byteOrder);
 
-            return new TiffHeader() { byteOrder = byteOrder, magicNumber = magicNumber, firstIfdOffset = firstIfdOffset };
+            if (magicNumber != 42)
+                throw new ImageFormatException("The TIFF header does not contain the expected magic number.");
+
+            return new TiffHeader() { ByteOrder = byteOrder, FirstIfdOffset = firstIfdOffset };
         }
 
         private static ByteOrder ReadHeader_ByteOrder(Stream stream)
@@ -26,8 +28,7 @@ namespace CorePhoto.Tiff
                 case 0x4D4D:
                     return ByteOrder.BigEndian;
                 default:
-                    // TODO : Throw a more relevant exception
-                    throw new NotImplementedException();
+                    throw new ImageFormatException("The TIFF byte order markers are invalid.");
             }
         }
     }

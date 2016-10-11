@@ -4,8 +4,7 @@ namespace CorePhoto.Tiff
 {
     public struct TiffHeader
     {
-        public ByteOrder byteOrder;
-        public int magicNumber;
-        public int firstIfdOffset;
+        public ByteOrder ByteOrder;
+        public int FirstIfdOffset;
     }
 }
