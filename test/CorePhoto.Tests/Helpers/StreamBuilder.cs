@@ -61,5 +61,12 @@ namespace CorePhoto.Tests.Helpers
             Stream.Write(value, 0, value.Length);
             return this;
         }
+
+        public StreamBuilder WritePadding(int count)
+        {
+            byte[] bytes = new byte[count];
+            Stream.Write(bytes, 0, count);
+            return this;
+        }
     }
 }

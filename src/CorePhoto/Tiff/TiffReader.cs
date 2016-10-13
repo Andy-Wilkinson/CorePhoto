@@ -47,6 +47,27 @@ namespace CorePhoto.Tiff
             return new TiffIfd { Entries = entries, NextIfdOffset = nextIfdOffset };
         }
 
+        public static TiffIfd ReadIfd(Stream stream, ByteOrder byteOrder, int offset)
+        {
+            stream.Seek(offset, SeekOrigin.Begin);
+            return ReadIfd(stream, byteOrder);
+        }
+
+        public static TiffIfd ReadFirstIfd(TiffHeader header, Stream stream, ByteOrder byteOrder)
+        {
+            var offset = header.FirstIfdOffset;
+            return ReadIfd(stream, byteOrder, offset);
+        }
+
+        public static TiffIfd? ReadNextIfd(TiffIfd ifd, Stream stream, ByteOrder byteOrder)
+        {
+            if (ifd.NextIfdOffset == 0)
+                return null;
+
+            var offset = ifd.NextIfdOffset;
+            return ReadIfd(stream, byteOrder, offset);
+        }
+
         public static TiffIfdEntry ReadIfdEntry(Stream stream, ByteOrder byteOrder)
         {
             short tag = stream.ReadInt16(byteOrder);
