@@ -73,7 +73,7 @@ namespace CorePhoto.Tiff
             short tag = stream.ReadInt16(byteOrder);
             TiffType type = (TiffType)stream.ReadInt16(byteOrder);
             int count = stream.ReadInt32(byteOrder);
-            int value = stream.ReadInt32(byteOrder);
+            byte[] value = stream.ReadBytes(4);
 
             return new TiffIfdEntry { Tag = tag, Type = type, Count = count, Value = value };
         }

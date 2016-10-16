@@ -5,6 +5,6 @@ namespace CorePhoto.Tiff
         public short Tag;
         public TiffType Type;
         public int Count;
-        public int Value;
+        public byte[] Value;
     }
 }
