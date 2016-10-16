@@ -185,5 +185,108 @@ namespace CorePhoto.Tests.Tiff
 
             Assert.Null(ifd);
         }
+
+        [Fact]
+        public void SizeOfHeader_AlwaysReturnsEightBytes()
+        {
+            var header = new TiffHeader();
+
+            var size = TiffReader.SizeOfHeader(header);
+
+            Assert.Equal(8, size);
+        }
+
+        [Fact]
+        public void SizeOfIfdEntry_AlwaysReturnsTwelveBytes()
+        {
+            var ifdEntry = new TiffIfdEntry();
+
+            var size = TiffReader.SizeOfIfdEntry(ifdEntry);
+
+            Assert.Equal(12, size);
+        }
+
+        [Theory]
+        [InlineDataAttribute(1, 18)]
+        [InlineDataAttribute(2, 30)]
+        [InlineDataAttribute(3, 42)]
+        public void SizeOfIfd_ReturnsCorrectSize(int entryCount, int expectedSize)
+        {
+            var ifd = new TiffIfd { Entries = new TiffIfdEntry[entryCount] };
+
+            var size = TiffReader.SizeOfIfd(ifd);
+
+            Assert.Equal(expectedSize, size);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte, 1)]
+        [InlineDataAttribute(TiffType.Ascii, 1)]
+        [InlineDataAttribute(TiffType.Short, 2)]
+        [InlineDataAttribute(TiffType.Long, 4)]
+        [InlineDataAttribute(TiffType.Rational, 8)]
+        [InlineDataAttribute(TiffType.SByte, 1)]
+        [InlineDataAttribute(TiffType.Undefined, 1)]
+        [InlineDataAttribute(TiffType.SShort, 2)]
+        [InlineDataAttribute(TiffType.SLong, 4)]
+        [InlineDataAttribute(TiffType.SRational, 8)]
+        [InlineDataAttribute(TiffType.Float, 4)]
+        [InlineDataAttribute(TiffType.Double, 8)]
+        [InlineDataAttribute((TiffType)999, 0)]
+
+        public void SizeOfDataType_ReturnsCorrectSize(TiffType type, int expectedSize)
+        {
+            var size = TiffReader.SizeOfDataType(type);
+
+            Assert.Equal(expectedSize, size);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte, 1, 1)]
+        [InlineDataAttribute(TiffType.Ascii, 1, 1)]
+        [InlineDataAttribute(TiffType.Short, 1, 2)]
+        [InlineDataAttribute(TiffType.Long, 1, 4)]
+        [InlineDataAttribute(TiffType.Rational, 1, 8)]
+        [InlineDataAttribute(TiffType.SByte, 1, 1)]
+        [InlineDataAttribute(TiffType.Undefined, 1, 1)]
+        [InlineDataAttribute(TiffType.SShort, 1, 2)]
+        [InlineDataAttribute(TiffType.SLong, 1, 4)]
+        [InlineDataAttribute(TiffType.SRational, 1, 8)]
+        [InlineDataAttribute(TiffType.Float, 1, 4)]
+        [InlineDataAttribute(TiffType.Double, 1, 8)]
+        [InlineDataAttribute((TiffType)999, 1, 0)]
+
+        public void SizeOfData_SingleItem_ReturnsCorrectSize(TiffType type, int count, int expectedSize)
+        {
+            var entry = new TiffIfdEntry { Type = type, Count = count };
+
+            var size = TiffReader.SizeOfData(entry);
+
+            Assert.Equal(expectedSize, size);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte, 15, 15)]
+        [InlineDataAttribute(TiffType.Ascii, 20, 20)]
+        [InlineDataAttribute(TiffType.Short, 18, 36)]
+        [InlineDataAttribute(TiffType.Long, 4, 16)]
+        [InlineDataAttribute(TiffType.Rational, 9, 72)]
+        [InlineDataAttribute(TiffType.SByte, 5, 5)]
+        [InlineDataAttribute(TiffType.Undefined, 136, 136)]
+        [InlineDataAttribute(TiffType.SShort, 12, 24)]
+        [InlineDataAttribute(TiffType.SLong, 15, 60)]
+        [InlineDataAttribute(TiffType.SRational, 10, 80)]
+        [InlineDataAttribute(TiffType.Float, 2, 8)]
+        [InlineDataAttribute(TiffType.Double, 2, 16)]
+        [InlineDataAttribute((TiffType)999, 1050, 0)]
+
+        public void SizeOfData_Array_ReturnsCorrectSize(TiffType type, int count, int expectedSize)
+        {
+            var entry = new TiffIfdEntry { Type = type, Count = count };
+
+            var size = TiffReader.SizeOfData(entry);
+
+            Assert.Equal(expectedSize, size);
+        }
     }
 }

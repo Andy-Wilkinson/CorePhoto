@@ -77,5 +77,38 @@ namespace CorePhoto.Tiff
 
             return new TiffIfdEntry { Tag = tag, Type = type, Count = count, Value = value };
         }
+
+        public static int SizeOfHeader(TiffHeader header) => 8;
+
+        public static int SizeOfIfdEntry(TiffIfdEntry entry) => 12;
+
+        public static int SizeOfIfd(TiffIfd ifd) => ifd.Entries.Length * 12 + 6;
+
+        public static int SizeOfDataType(TiffType type)
+        {
+            switch (type)
+            {
+                case TiffType.Byte:
+                case TiffType.Ascii:
+                case TiffType.SByte:
+                case TiffType.Undefined:
+                    return 1;
+                case TiffType.Short:
+                case TiffType.SShort:
+                    return 2;
+                case TiffType.Long:
+                case TiffType.SLong:
+                case TiffType.Float:
+                    return 4;
+                case TiffType.Rational:
+                case TiffType.SRational:
+                case TiffType.Double:
+                    return 8;
+                default:
+                    return 0;
+            }
+        }
+
+        public static int SizeOfData(TiffIfdEntry entry) => SizeOfDataType(entry.Type) * entry.Count;
     }
 }
