@@ -187,10 +187,22 @@ namespace CorePhoto.Tests.Tiff
         }
 
         [Theory]
-        [MemberDataAttribute(nameof(ByteOrderValues))]
-        public void ReadData_ReturnsExpectedData_Byte_LessThanFourBytes(ByteOrder byteOrder)
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 1, 2, 3, 4 }, 3, new byte[] { }, new byte[] { 1, 2, 3, 4 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, 3, new byte[] { }, new byte[] { 1, 2, 3, 4 })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 1, 2, 3, 4 }, 4, new byte[] { }, new byte[] { 1, 2, 3, 4 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, 4, new byte[] { }, new byte[] { 1, 2, 3, 4 })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 4, 0, 0, 0 }, 5, new byte[] { 0, 0, 0, 0, 1, 2, 3, 4, 5 }, new byte[] { 1, 2, 3, 4, 5 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 4 }, 5, new byte[] { 0, 0, 0, 0, 1, 2, 3, 4, 5 }, new byte[] { 1, 2, 3, 4, 5 })]
+        public void ReadData_ReturnsExpectedData_Byte(ByteOrder byteOrder, byte[] ifdValue, int count, byte[] data, byte[] expectedValue)
         {
-            var entry = new TiffIfdEntry { Type = TiffType.Byte, Count = 3, Value = new byte[] { 1, 2, 3 } };
+            var stream = new StreamBuilder(byteOrder)
+                                    .WriteBytes(data)
+                                    .ToStream();
+
+            var entry = new TiffIfdEntry { Type = TiffType.Byte, Count = count, Value = ifdValue };
+            var value = TiffReader.ReadData(entry, stream, byteOrder);
+
+            Assert.Equal(expectedValue, value);
         }
 
         [Fact]

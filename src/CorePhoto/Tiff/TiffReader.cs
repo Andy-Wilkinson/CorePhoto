@@ -78,6 +78,22 @@ namespace CorePhoto.Tiff
             return new TiffIfdEntry { Tag = tag, Type = type, Count = count, Value = value };
         }
 
+        public static byte[] ReadData(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            var sizeOfData = SizeOfData(entry);
+
+            if (sizeOfData <= 4)
+            {
+                return entry.Value;
+            }
+            else
+            {
+                var dataOffset = DataConverter.ToInt32(entry.Value, 0, byteOrder);
+                stream.Seek(dataOffset, SeekOrigin.Begin);
+                return stream.ReadBytes(sizeOfData);
+            }
+        }
+
         public static int SizeOfHeader(TiffHeader header) => 8;
 
         public static int SizeOfIfdEntry(TiffIfdEntry entry) => 12;
