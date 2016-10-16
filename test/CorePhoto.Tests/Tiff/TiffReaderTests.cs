@@ -97,9 +97,9 @@ namespace CorePhoto.Tests.Tiff
             var ifd = TiffReader.ReadIfd(stream, byteOrder, 20);
 
             Assert.Equal(3, ifd.Entries.Length);
-            AssertTiff.Equal(new TiffIfdEntry { Tag = 2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
-            AssertTiff.Equal(new TiffIfdEntry { Tag = 4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, ifd.Entries[1]);
-            AssertTiff.Equal(new TiffIfdEntry { Tag = 6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, ifd.Entries[2]);
+            AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
+            AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, ifd.Entries[1]);
+            AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, ifd.Entries[2]);
             Assert.Equal(123456, ifd.NextIfdOffset);
         }
 
@@ -116,7 +116,7 @@ namespace CorePhoto.Tests.Tiff
 
             var ifdEntry = TiffReader.ReadIfdEntry(stream, byteOrder);
 
-            Assert.Equal(167, ifdEntry.Tag);
+            Assert.Equal((TiffTag)167, ifdEntry.Tag);
             Assert.Equal(TiffType.Rational, ifdEntry.Type);
             Assert.Equal(123456, ifdEntry.Count);
             Assert.Equal(new byte[] { 3, 4, 5, 6 }, ifdEntry.Value);
@@ -139,9 +139,9 @@ namespace CorePhoto.Tests.Tiff
             var ifd = TiffReader.ReadFirstIfd(header, stream, byteOrder);
 
             Assert.Equal(3, ifd.Entries.Length);
-            AssertTiff.Equal(new TiffIfdEntry { Tag = 2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
-            AssertTiff.Equal(new TiffIfdEntry { Tag = 4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, ifd.Entries[1]);
-            AssertTiff.Equal(new TiffIfdEntry { Tag = 6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, ifd.Entries[2]);
+            AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
+            AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, ifd.Entries[1]);
+            AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, ifd.Entries[2]);
             Assert.Equal(123456, ifd.NextIfdOffset);
         }
 
@@ -162,9 +162,9 @@ namespace CorePhoto.Tests.Tiff
             var ifd = TiffReader.ReadNextIfd(previousIfd, stream, byteOrder).Value;
 
             Assert.Equal(3, ifd.Entries.Length);
-            AssertTiff.Equal(new TiffIfdEntry { Tag = 2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
-            AssertTiff.Equal(new TiffIfdEntry { Tag = 4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, ifd.Entries[1]);
-            AssertTiff.Equal(new TiffIfdEntry { Tag = 6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, ifd.Entries[2]);
+            AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
+            AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, ifd.Entries[1]);
+            AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, ifd.Entries[2]);
             Assert.Equal(123456, ifd.NextIfdOffset);
         }
 

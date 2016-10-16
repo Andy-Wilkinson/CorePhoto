@@ -70,7 +70,7 @@ namespace CorePhoto.Tiff
 
         public static TiffIfdEntry ReadIfdEntry(Stream stream, ByteOrder byteOrder)
         {
-            short tag = stream.ReadInt16(byteOrder);
+            TiffTag tag = (TiffTag)stream.ReadInt16(byteOrder);
             TiffType type = (TiffType)stream.ReadInt16(byteOrder);
             int count = stream.ReadInt32(byteOrder);
             byte[] value = stream.ReadBytes(4);
