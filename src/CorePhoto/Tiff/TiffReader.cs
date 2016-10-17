@@ -126,5 +126,35 @@ namespace CorePhoto.Tiff
         }
 
         public static int SizeOfData(TiffIfdEntry entry) => SizeOfDataType(entry.Type) * entry.Count;
+
+        public static uint GetInteger(TiffIfdEntry entry, ByteOrder byteOrder)
+        {
+            switch (entry.Type)
+            {
+                case TiffType.Byte:
+                    return DataConverter.ToByte(entry.Value, 0);
+                case TiffType.Short:
+                    return DataConverter.ToUInt16(entry.Value, 0, byteOrder);
+                case TiffType.Long:
+                    return DataConverter.ToUInt32(entry.Value, 0, byteOrder);
+                default:
+                    throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to an unsigned integer.");
+            }
+        }
+
+        public static int GetSignedInteger(TiffIfdEntry entry, ByteOrder byteOrder)
+        {
+            switch (entry.Type)
+            {
+                case TiffType.SByte:
+                    return DataConverter.ToSByte(entry.Value, 0);
+                case TiffType.SShort:
+                    return DataConverter.ToInt16(entry.Value, 0, byteOrder);
+                case TiffType.SLong:
+                    return DataConverter.ToInt32(entry.Value, 0, byteOrder);
+                default:
+                    throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to a signed integer.");
+            }
+        }
     }
 }

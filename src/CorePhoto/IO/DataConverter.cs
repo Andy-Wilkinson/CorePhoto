@@ -4,6 +4,16 @@ namespace CorePhoto.IO
 {
     public static class DataConverter
     {
+        public static Byte ToByte(byte[] bytes, int offset)
+        {
+            return bytes[offset];
+        }
+
+        public static SByte ToSByte(byte[] bytes, int offset)
+        {
+            return (sbyte)bytes[offset];
+        }
+
         public static Int16 ToInt16(byte[] bytes, int offset, ByteOrder byteOrder)
         {
             switch (byteOrder)
@@ -28,6 +38,16 @@ namespace CorePhoto.IO
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+        public static UInt16 ToUInt16(byte[] bytes, int offset, ByteOrder byteOrder)
+        {
+            return (ushort)ToInt16(bytes, offset, byteOrder);
+        }
+
+        public static UInt32 ToUInt32(byte[] bytes, int offset, ByteOrder byteOrder)
+        {
+            return (uint)ToInt32(bytes, offset, byteOrder);
         }
     }
 }

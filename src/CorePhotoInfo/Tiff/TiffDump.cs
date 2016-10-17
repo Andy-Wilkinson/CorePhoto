@@ -1,4 +1,5 @@
 using System.IO;
+using CorePhoto.IO;
 using CorePhoto.Tiff;
 using CorePhotoInfo.Reporting;
 
@@ -28,26 +29,27 @@ namespace CorePhotoInfo.Tiff
             while (ifd != null)
             {
                 _report.WriteSubheader("IFD {0}", ifdId);
-                WriteTiffIfdInfo(ifd.Value);
+                WriteTiffIfdInfo(ifd.Value, header.ByteOrder);
 
                 ifd = TiffReader.ReadNextIfd(ifd.Value, _stream, header.ByteOrder);
                 ifdId++;
             }
         }
 
-        private void WriteTiffIfdInfo(TiffIfd ifd)
+        private void WriteTiffIfdInfo(TiffIfd ifd, ByteOrder byteOrder)
         {
             foreach (TiffIfdEntry entry in ifd.Entries)
             {
-                WriteTiffIfdEntryInfo(entry);
+                WriteTiffIfdEntryInfo(entry, byteOrder);
             }
         }
 
-        private void WriteTiffIfdEntryInfo(TiffIfdEntry entry)
+        private void WriteTiffIfdEntryInfo(TiffIfdEntry entry, ByteOrder byteOrder)
         {
             var typeStr = entry.Count == 1 ? $"{entry.Type}" : $"{entry.Type}[{entry.Count}]";
+            var data = TiffReader.ReadData(entry, _stream, byteOrder);
 
-            _report.WriteLine($"{entry.Tag} ({typeStr}) = {entry.Value}");
+            _report.WriteLine($"{entry.Tag} ({typeStr}) = [{data[0]}, {data[1]}, {data[2]}, {data[3]}]");
         }
 
         public static void WriteTiffInfo(Stream stream, IReportWriter reportWriter)

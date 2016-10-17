@@ -2,6 +2,7 @@ using CorePhoto.IO;
 using CorePhoto.Tiff;
 using CorePhoto.Tests.Helpers;
 using Xunit;
+using System;
 
 namespace CorePhoto.Tests.Tiff
 {
@@ -306,6 +307,126 @@ namespace CorePhoto.Tests.Tiff
             var size = TiffReader.SizeOfData(entry);
 
             Assert.Equal(expectedSize, size);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte, ByteOrder.LittleEndian, new byte[] { 0, 1, 2, 3 }, 0)]
+        [InlineDataAttribute(TiffType.Byte, ByteOrder.LittleEndian, new byte[] { 1, 2, 3, 4 }, 1)]
+        [InlineDataAttribute(TiffType.Byte, ByteOrder.LittleEndian, new byte[] { 255, 2, 3, 4 }, 255)]
+        [InlineDataAttribute(TiffType.Byte, ByteOrder.BigEndian, new byte[] { 0, 1, 2, 3 }, 0)]
+        [InlineDataAttribute(TiffType.Byte, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, 1)]
+        [InlineDataAttribute(TiffType.Byte, ByteOrder.BigEndian, new byte[] { 255, 2, 3, 4 }, 255)]
+        [InlineDataAttribute(TiffType.Short, ByteOrder.LittleEndian, new byte[] { 0, 0, 2, 3 }, 0)]
+        [InlineDataAttribute(TiffType.Short, ByteOrder.LittleEndian, new byte[] { 1, 0, 2, 3 }, 1)]
+        [InlineDataAttribute(TiffType.Short, ByteOrder.LittleEndian, new byte[] { 0, 1, 2, 3 }, 256)]
+        [InlineDataAttribute(TiffType.Short, ByteOrder.LittleEndian, new byte[] { 2, 1, 2, 3 }, 258)]
+        [InlineDataAttribute(TiffType.Short, ByteOrder.LittleEndian, new byte[] { 255, 255, 2, 3 }, UInt16.MaxValue)]
+        [InlineDataAttribute(TiffType.Short, ByteOrder.BigEndian, new byte[] { 0, 0, 2, 3 }, 0)]
+        [InlineDataAttribute(TiffType.Short, ByteOrder.BigEndian, new byte[] { 0, 1, 2, 3 }, 1)]
+        [InlineDataAttribute(TiffType.Short, ByteOrder.BigEndian, new byte[] { 1, 0, 2, 3 }, 256)]
+        [InlineDataAttribute(TiffType.Short, ByteOrder.BigEndian, new byte[] { 1, 2, 2, 3 }, 258)]
+        [InlineDataAttribute(TiffType.Short, ByteOrder.BigEndian, new byte[] { 255, 255, 2, 3 }, UInt16.MaxValue)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 0, 0, 0, 0 }, 0)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 1, 0, 0, 0 }, 1)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 0, 1, 0, 0 }, 256)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 0, 0, 1, 0 }, 256 * 256)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 0, 0, 0, 1 }, 256 * 256 * 256)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 1, 2, 3, 4 }, 67305985)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 255, 255, 255, 255 }, UInt32.MaxValue)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 0, 0, 0, 0 }, 0)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1 }, 1)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 0, 0, 1, 0 }, 256)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 0, 1, 0, 0 }, 256 * 256)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 1, 0, 0, 0 }, 256 * 256 * 256)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 4, 3, 2, 1 }, 67305985)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 255, 255, 255, 255 }, UInt32.MaxValue)]
+        public void GetInteger_ReturnsValue(TiffType type, ByteOrder byteOrder, byte[] data, uint expectedValue)
+        {
+            var entry = new TiffIfdEntry { Type = type, Count = 1, Value = data };
+
+            var value = TiffReader.GetInteger(entry, byteOrder);
+
+            Assert.Equal(expectedValue, value);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Rational)]
+        [InlineDataAttribute(TiffType.SByte)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SShort)]
+        [InlineDataAttribute(TiffType.SLong)]
+        [InlineDataAttribute(TiffType.SRational)]
+        [InlineDataAttribute(TiffType.Float)]
+        [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute((TiffType)99)]
+        public void GetInteger_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var entry = new TiffIfdEntry { Type = type, Count = 1 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.GetInteger(entry, ByteOrder.LittleEndian));
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to an unsigned integer.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.SByte, ByteOrder.LittleEndian, new byte[] { 0, 1, 2, 3 }, 0)]
+        [InlineDataAttribute(TiffType.SByte, ByteOrder.LittleEndian, new byte[] { 1, 2, 3, 4 }, 1)]
+        [InlineDataAttribute(TiffType.SByte, ByteOrder.LittleEndian, new byte[] { 255, 2, 3, 4 }, -1)]
+        [InlineDataAttribute(TiffType.SByte, ByteOrder.BigEndian, new byte[] { 0, 1, 2, 3 }, 0)]
+        [InlineDataAttribute(TiffType.SByte, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, 1)]
+        [InlineDataAttribute(TiffType.SByte, ByteOrder.BigEndian, new byte[] { 255, 2, 3, 4 }, -1)]
+        [InlineDataAttribute(TiffType.SShort, ByteOrder.LittleEndian, new byte[] { 0, 0, 2, 3 }, 0)]
+        [InlineDataAttribute(TiffType.SShort, ByteOrder.LittleEndian, new byte[] { 1, 0, 2, 3 }, 1)]
+        [InlineDataAttribute(TiffType.SShort, ByteOrder.LittleEndian, new byte[] { 0, 1, 2, 3 }, 256)]
+        [InlineDataAttribute(TiffType.SShort, ByteOrder.LittleEndian, new byte[] { 2, 1, 2, 3 }, 258)]
+        [InlineDataAttribute(TiffType.SShort, ByteOrder.LittleEndian, new byte[] { 255, 255, 2, 3 }, -1)]
+        [InlineDataAttribute(TiffType.SShort, ByteOrder.BigEndian, new byte[] { 0, 0, 2, 3 }, 0)]
+        [InlineDataAttribute(TiffType.SShort, ByteOrder.BigEndian, new byte[] { 0, 1, 2, 3 }, 1)]
+        [InlineDataAttribute(TiffType.SShort, ByteOrder.BigEndian, new byte[] { 1, 0, 2, 3 }, 256)]
+        [InlineDataAttribute(TiffType.SShort, ByteOrder.BigEndian, new byte[] { 1, 2, 2, 3 }, 258)]
+        [InlineDataAttribute(TiffType.SShort, ByteOrder.BigEndian, new byte[] { 255, 255, 2, 3 }, -1)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.LittleEndian, new byte[] { 0, 0, 0, 0 }, 0)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.LittleEndian, new byte[] { 1, 0, 0, 0 }, 1)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.LittleEndian, new byte[] { 0, 1, 0, 0 }, 256)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.LittleEndian, new byte[] { 0, 0, 1, 0 }, 256 * 256)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.LittleEndian, new byte[] { 0, 0, 0, 1 }, 256 * 256 * 256)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.LittleEndian, new byte[] { 1, 2, 3, 4 }, 67305985)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.LittleEndian, new byte[] { 255, 255, 255, 255 }, -1)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.BigEndian, new byte[] { 0, 0, 0, 0 }, 0)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1 }, 1)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.BigEndian, new byte[] { 0, 0, 1, 0 }, 256)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.BigEndian, new byte[] { 0, 1, 0, 0 }, 256 * 256)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.BigEndian, new byte[] { 1, 0, 0, 0 }, 256 * 256 * 256)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.BigEndian, new byte[] { 4, 3, 2, 1 }, 67305985)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.BigEndian, new byte[] { 255, 255, 255, 255 }, -1)]
+        public void GetSignedInteger_ReturnsValue(TiffType type, ByteOrder byteOrder, byte[] data, int expectedValue)
+        {
+            var entry = new TiffIfdEntry { Type = type, Count = 1, Value = data };
+
+            var value = TiffReader.GetSignedInteger(entry, byteOrder);
+
+            Assert.Equal(expectedValue, value);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte)]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Short)]
+        [InlineDataAttribute(TiffType.Long)]
+        [InlineDataAttribute(TiffType.Rational)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SRational)]
+        [InlineDataAttribute(TiffType.Float)]
+        [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute((TiffType)99)]
+        public void GetSignedInteger_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var entry = new TiffIfdEntry { Type = type, Count = 1 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.GetSignedInteger(entry, ByteOrder.LittleEndian));
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to a signed integer.", e.Message);
         }
     }
 }
