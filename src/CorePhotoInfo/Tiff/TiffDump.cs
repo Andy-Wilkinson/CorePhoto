@@ -47,9 +47,32 @@ namespace CorePhotoInfo.Tiff
         private void WriteTiffIfdEntryInfo(TiffIfdEntry entry, ByteOrder byteOrder)
         {
             var typeStr = entry.Count == 1 ? $"{entry.Type}" : $"{entry.Type}[{entry.Count}]";
-            var data = TiffReader.ReadData(entry, _stream, byteOrder);
+            string value = GetTiffIfdEntryData(entry, byteOrder);
 
-            _report.WriteLine($"{entry.Tag} ({typeStr}) = [{data[0]}, {data[1]}, {data[2]}, {data[3]}]");
+            _report.WriteLine($"{entry.Tag} ({typeStr}) = {value}");
+        }
+
+        private string GetTiffIfdEntryData(TiffIfdEntry entry, ByteOrder byteOrder)
+        {
+            switch (entry.Type)
+            {
+                case TiffType.Byte:
+                case TiffType.Short:
+                case TiffType.Long:
+                    if (entry.Count == 1)
+                        return TiffReader.GetInteger(entry, byteOrder).ToString();
+                    else
+                        return "Array";
+                case TiffType.SByte:
+                case TiffType.SShort:
+                case TiffType.SLong:
+                    if (entry.Count == 1)
+                        return TiffReader.GetSignedInteger(entry, byteOrder).ToString();
+                    else
+                        return "Array";
+                default:
+                    return "Unknown Type";
+            }
         }
 
         public static void WriteTiffInfo(Stream stream, IReportWriter reportWriter)
