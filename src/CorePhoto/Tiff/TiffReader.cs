@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using CorePhoto.IO;
 
 namespace CorePhoto.Tiff
@@ -152,6 +153,54 @@ namespace CorePhoto.Tiff
                     return DataConverter.ToInt16(entry.Value, 0, byteOrder);
                 case TiffType.SLong:
                     return DataConverter.ToInt32(entry.Value, 0, byteOrder);
+                default:
+                    throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to a signed integer.");
+            }
+        }
+
+        public static uint[] ReadIntegerArray(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            switch (entry.Type)
+            {
+                case TiffType.Byte:
+                    {
+                        byte[] data = ReadData(entry, stream, byteOrder);
+                        return Enumerable.Range(0, entry.Count).Select(index => (uint)DataConverter.ToByte(data, index)).ToArray();
+                    }
+                case TiffType.Short:
+                    {
+                        byte[] data = ReadData(entry, stream, byteOrder);
+                        return Enumerable.Range(0, entry.Count).Select(index => (uint)DataConverter.ToUInt16(data, index * 2, byteOrder)).ToArray();
+                    }
+                case TiffType.Long:
+                    {
+                        byte[] data = ReadData(entry, stream, byteOrder);
+                        return Enumerable.Range(0, entry.Count).Select(index => DataConverter.ToUInt32(data, index * 4, byteOrder)).ToArray();
+                    }
+                default:
+                    throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to an unsigned integer.");
+            }
+        }
+
+        public static int[] ReadSignedIntegerArray(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            switch (entry.Type)
+            {
+                case TiffType.SByte:
+                    {
+                        byte[] data = ReadData(entry, stream, byteOrder);
+                        return Enumerable.Range(0, entry.Count).Select(index => (int)DataConverter.ToSByte(data, index)).ToArray();
+                    }
+                case TiffType.SShort:
+                    {
+                        byte[] data = ReadData(entry, stream, byteOrder);
+                        return Enumerable.Range(0, entry.Count).Select(index => (int)DataConverter.ToInt16(data, index * 2, byteOrder)).ToArray();
+                    }
+                case TiffType.SLong:
+                    {
+                        byte[] data = ReadData(entry, stream, byteOrder);
+                        return Enumerable.Range(0, entry.Count).Select(index => DataConverter.ToInt32(data, index * 4, byteOrder)).ToArray();
+                    }
                 default:
                     throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to a signed integer.");
             }

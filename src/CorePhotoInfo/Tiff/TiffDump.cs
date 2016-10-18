@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using CorePhoto.IO;
 using CorePhoto.Tiff;
 using CorePhotoInfo.Reporting;
@@ -62,17 +63,33 @@ namespace CorePhotoInfo.Tiff
                     if (entry.Count == 1)
                         return TiffReader.GetInteger(entry, byteOrder).ToString();
                     else
-                        return "Array";
+                    {
+                        uint[] array = TiffReader.ReadIntegerArray(entry, _stream, byteOrder);
+                        return ConvertArrayToString(array);
+                    }
                 case TiffType.SByte:
                 case TiffType.SShort:
                 case TiffType.SLong:
                     if (entry.Count == 1)
                         return TiffReader.GetSignedInteger(entry, byteOrder).ToString();
                     else
-                        return "Array";
+                    {
+                        int[] array = TiffReader.ReadSignedIntegerArray(entry, _stream, byteOrder);
+                        return ConvertArrayToString(array);
+                    }
                 default:
                     return "Unknown Type";
             }
+        }
+
+        private string ConvertArrayToString<T>(T[] array)
+        {
+            var maxArraySize = 10;
+            var truncatedArray = array.Take(maxArraySize).Select(i => i.ToString());
+            var arrayString = string.Join(", ", truncatedArray);
+            var continuationString = array.Length > maxArraySize ? ", ..." : "";
+
+            return $"[{arrayString}{continuationString}]";
         }
 
         public static void WriteTiffInfo(Stream stream, IReportWriter reportWriter)

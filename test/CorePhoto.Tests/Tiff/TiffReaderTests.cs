@@ -428,5 +428,133 @@ namespace CorePhoto.Tests.Tiff
 
             Assert.Equal($"A value of type '{type}' cannot be converted to a signed integer.", e.Message);
         }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte, 1, ByteOrder.LittleEndian, new byte[] { 0, 1, 2, 3 }, new uint[] { 0 })]
+        [InlineDataAttribute(TiffType.Byte, 3, ByteOrder.LittleEndian, new byte[] { 0, 1, 2, 3 }, new uint[] { 0, 1, 2 })]
+        [InlineDataAttribute(TiffType.Byte, 7, ByteOrder.LittleEndian, new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 }, new uint[] { 0, 1, 2, 3, 4, 5, 6 })]
+        [InlineDataAttribute(TiffType.Byte, 1, ByteOrder.BigEndian, new byte[] { 0, 1, 2, 3 }, new uint[] { 0 })]
+        [InlineDataAttribute(TiffType.Byte, 3, ByteOrder.BigEndian, new byte[] { 0, 1, 2, 3 }, new uint[] { 0, 1, 2 })]
+        [InlineDataAttribute(TiffType.Byte, 7, ByteOrder.BigEndian, new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 }, new uint[] { 0, 1, 2, 3, 4, 5, 6 })]
+        [InlineDataAttribute(TiffType.Short, 1, ByteOrder.LittleEndian, new byte[] { 1, 0, 3, 2 }, new uint[] { 1 })]
+        [InlineDataAttribute(TiffType.Short, 2, ByteOrder.LittleEndian, new byte[] { 1, 0, 3, 2 }, new uint[] { 1, 515 })]
+        [InlineDataAttribute(TiffType.Short, 3, ByteOrder.LittleEndian, new byte[] { 1, 0, 3, 2, 5, 4, 6, 7, 8 }, new uint[] { 1, 515, 1029 })]
+        [InlineDataAttribute(TiffType.Short, 1, ByteOrder.BigEndian, new byte[] { 0, 1, 2, 3 }, new uint[] { 1 })]
+        [InlineDataAttribute(TiffType.Short, 2, ByteOrder.BigEndian, new byte[] { 0, 1, 2, 3 }, new uint[] { 1, 515 })]
+        [InlineDataAttribute(TiffType.Short, 3, ByteOrder.BigEndian, new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 }, new uint[] { 1, 515, 1029 })]
+        [InlineDataAttribute(TiffType.Long, 1, ByteOrder.LittleEndian, new byte[] { 4, 3, 2, 1 }, new uint[] { 0x01020304 })]
+        [InlineDataAttribute(TiffType.Long, 2, ByteOrder.LittleEndian, new byte[] { 4, 3, 2, 1, 6, 5, 4, 3, 99, 99 }, new uint[] { 0x01020304, 0x03040506 })]
+        [InlineDataAttribute(TiffType.Long, 1, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, new uint[] { 0x01020304 })]
+        [InlineDataAttribute(TiffType.Long, 2, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4, 3, 4, 5, 6, 99, 99 }, new uint[] { 0x01020304, 0x03040506 })]
+        public void ReadIntegerArray_ReturnsValue(TiffType type, int count, ByteOrder byteOrder, byte[] data, uint[] expectedValue)
+        {
+            // Create a stream with six padding bytes
+
+            var streamBuilder = new StreamBuilder(byteOrder);
+            streamBuilder.WriteBytes(new byte[] { 42, 42, 42, 42, 42, 42 });
+
+            // If the data is longer than four bytes, then write this to the stream and set the data to the offset
+
+            if (data.Length > 4)
+            {
+                streamBuilder.WriteBytes(data);
+                data = byteOrder == ByteOrder.LittleEndian ? new byte[] { 6, 0, 0, 0 } : new byte[] { 0, 0, 0, 6 };
+            }
+
+            var stream = streamBuilder.ToStream();
+
+            // Create the IFD entry and test reading the value
+
+            var entry = new TiffIfdEntry { Type = type, Count = count, Value = data };
+
+            var value = TiffReader.ReadIntegerArray(entry, stream, byteOrder);
+
+            Assert.Equal(expectedValue, value);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Rational)]
+        [InlineDataAttribute(TiffType.SByte)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SShort)]
+        [InlineDataAttribute(TiffType.SLong)]
+        [InlineDataAttribute(TiffType.SRational)]
+        [InlineDataAttribute(TiffType.Float)]
+        [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute((TiffType)99)]
+        public void ReadIntegerArray_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadIntegerArray(entry, stream, ByteOrder.LittleEndian));
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to an unsigned integer.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.SByte, 1, ByteOrder.LittleEndian, new byte[] { 0, 1, 2, 3 }, new int[] { 0 })]
+        [InlineDataAttribute(TiffType.SByte, 3, ByteOrder.LittleEndian, new byte[] { 0, 255, 2, 3 }, new int[] { 0, -1, 2 })]
+        [InlineDataAttribute(TiffType.SByte, 7, ByteOrder.LittleEndian, new byte[] { 0, 255, 2, 3, 4, 5, 6, 7, 8 }, new int[] { 0, -1, 2, 3, 4, 5, 6 })]
+        [InlineDataAttribute(TiffType.SByte, 1, ByteOrder.BigEndian, new byte[] { 0, 1, 2, 3 }, new int[] { 0 })]
+        [InlineDataAttribute(TiffType.SByte, 3, ByteOrder.BigEndian, new byte[] { 0, 255, 2, 3 }, new int[] { 0, -1, 2 })]
+        [InlineDataAttribute(TiffType.SByte, 7, ByteOrder.BigEndian, new byte[] { 0, 255, 2, 3, 4, 5, 6, 7, 8 }, new int[] { 0, -1, 2, 3, 4, 5, 6 })]
+        [InlineDataAttribute(TiffType.SShort, 1, ByteOrder.LittleEndian, new byte[] { 1, 0, 3, 2 }, new int[] { 1 })]
+        [InlineDataAttribute(TiffType.SShort, 2, ByteOrder.LittleEndian, new byte[] { 1, 0, 255, 255 }, new int[] { 1, -1 })]
+        [InlineDataAttribute(TiffType.SShort, 3, ByteOrder.LittleEndian, new byte[] { 1, 0, 255, 255, 5, 4, 6, 7, 8 }, new int[] { 1, -1, 1029 })]
+        [InlineDataAttribute(TiffType.SShort, 1, ByteOrder.BigEndian, new byte[] { 0, 1, 2, 3 }, new int[] { 1 })]
+        [InlineDataAttribute(TiffType.SShort, 2, ByteOrder.BigEndian, new byte[] { 0, 1, 255, 255 }, new int[] { 1, -1 })]
+        [InlineDataAttribute(TiffType.SShort, 3, ByteOrder.BigEndian, new byte[] { 0, 1, 255, 255, 4, 5, 6, 7, 8 }, new int[] { 1, -1, 1029 })]
+        [InlineDataAttribute(TiffType.SLong, 1, ByteOrder.LittleEndian, new byte[] { 4, 3, 2, 1 }, new int[] { 0x01020304 })]
+        [InlineDataAttribute(TiffType.SLong, 2, ByteOrder.LittleEndian, new byte[] { 4, 3, 2, 1, 255, 255, 255, 255, 99, 99 }, new int[] { 0x01020304, -1 })]
+        [InlineDataAttribute(TiffType.SLong, 1, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, new int[] { 0x01020304 })]
+        [InlineDataAttribute(TiffType.SLong, 2, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4, 255, 255, 255, 255, 99, 99 }, new int[] { 0x01020304, -1 })]
+        public void ReadSignedIntegerArray_ReturnsValue(TiffType type, int count, ByteOrder byteOrder, byte[] data, int[] expectedValue)
+        {
+            // Create a stream with six padding bytes
+
+            var streamBuilder = new StreamBuilder(byteOrder);
+            streamBuilder.WriteBytes(new byte[] { 42, 42, 42, 42, 42, 42 });
+
+            // If the data is longer than four bytes, then write this to the stream and set the data to the offset
+
+            if (data.Length > 4)
+            {
+                streamBuilder.WriteBytes(data);
+                data = byteOrder == ByteOrder.LittleEndian ? new byte[] { 6, 0, 0, 0 } : new byte[] { 0, 0, 0, 6 };
+            }
+
+            var stream = streamBuilder.ToStream();
+
+            // Create the IFD entry and test reading the value
+
+            var entry = new TiffIfdEntry { Type = type, Count = count, Value = data };
+
+            var value = TiffReader.ReadSignedIntegerArray(entry, stream, byteOrder);
+
+            Assert.Equal(expectedValue, value);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte)]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Short)]
+        [InlineDataAttribute(TiffType.Long)]
+        [InlineDataAttribute(TiffType.Rational)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SRational)]
+        [InlineDataAttribute(TiffType.Float)]
+        [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute((TiffType)99)]
+        public void ReadSignedIntegerArray_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadSignedIntegerArray(entry, stream, ByteOrder.LittleEndian));
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to a signed integer.", e.Message);
+        }
     }
 }
