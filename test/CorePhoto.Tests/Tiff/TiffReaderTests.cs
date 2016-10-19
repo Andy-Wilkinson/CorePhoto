@@ -448,24 +448,9 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Long, 2, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4, 3, 4, 5, 6, 99, 99 }, new uint[] { 0x01020304, 0x03040506 })]
         public void ReadIntegerArray_ReturnsValue(TiffType type, int count, ByteOrder byteOrder, byte[] data, uint[] expectedValue)
         {
-            // Create a stream with six padding bytes
-
-            var streamBuilder = new StreamBuilder(byteOrder);
-            streamBuilder.WriteBytes(new byte[] { 42, 42, 42, 42, 42, 42 });
-
-            // If the data is longer than four bytes, then write this to the stream and set the data to the offset
-
-            if (data.Length > 4)
-            {
-                streamBuilder.WriteBytes(data);
-                data = byteOrder == ByteOrder.LittleEndian ? new byte[] { 6, 0, 0, 0 } : new byte[] { 0, 0, 0, 6 };
-            }
-
-            var stream = streamBuilder.ToStream();
-
-            // Create the IFD entry and test reading the value
-
-            var entry = new TiffIfdEntry { Type = type, Count = count, Value = data };
+            var entryTuple = TiffHelper.GenerateTiffIfdEntry(type, data, 6, byteOrder, count);
+            var entry = entryTuple.Entry;
+            var stream = entryTuple.Stream;
 
             var value = TiffReader.ReadIntegerArray(entry, stream, byteOrder);
 
@@ -512,24 +497,9 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SLong, 2, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4, 255, 255, 255, 255, 99, 99 }, new int[] { 0x01020304, -1 })]
         public void ReadSignedIntegerArray_ReturnsValue(TiffType type, int count, ByteOrder byteOrder, byte[] data, int[] expectedValue)
         {
-            // Create a stream with six padding bytes
-
-            var streamBuilder = new StreamBuilder(byteOrder);
-            streamBuilder.WriteBytes(new byte[] { 42, 42, 42, 42, 42, 42 });
-
-            // If the data is longer than four bytes, then write this to the stream and set the data to the offset
-
-            if (data.Length > 4)
-            {
-                streamBuilder.WriteBytes(data);
-                data = byteOrder == ByteOrder.LittleEndian ? new byte[] { 6, 0, 0, 0 } : new byte[] { 0, 0, 0, 6 };
-            }
-
-            var stream = streamBuilder.ToStream();
-
-            // Create the IFD entry and test reading the value
-
-            var entry = new TiffIfdEntry { Type = type, Count = count, Value = data };
+            var entryTuple = TiffHelper.GenerateTiffIfdEntry(type, data, 6, byteOrder, count);
+            var entry = entryTuple.Entry;
+            var stream = entryTuple.Stream;
 
             var value = TiffReader.ReadSignedIntegerArray(entry, stream, byteOrder);
 
@@ -568,26 +538,9 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', 0, (byte)'E', (byte)'F', (byte)'G', (byte)'H', 0 }, "ABCD\0EFGH")]
         public void ReadString_ReturnsValue(ByteOrder byteOrder, byte[] data, string expectedValue)
         {
-            var length = data.Length;
-
-            // Create a stream with six padding bytes
-
-            var streamBuilder = new StreamBuilder(byteOrder);
-            streamBuilder.WriteBytes(new byte[] { 42, 42, 42, 42, 42, 42 });
-
-            // If the data is longer than four bytes, then write this to the stream and set the data to the offset
-
-            if (data.Length > 4)
-            {
-                streamBuilder.WriteBytes(data);
-                data = byteOrder == ByteOrder.LittleEndian ? new byte[] { 6, 0, 0, 0 } : new byte[] { 0, 0, 0, 6 };
-            }
-
-            var stream = streamBuilder.ToStream();
-
-            // Create the IFD entry and test reading the value
-
-            var entry = new TiffIfdEntry { Type = TiffType.Ascii, Count = length, Value = data };
+            var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.Ascii, data, 6, byteOrder);
+            var entry = entryTuple.Entry;
+            var stream = entryTuple.Stream;
 
             var value = TiffReader.ReadString(entry, stream, byteOrder);
 
@@ -628,26 +581,9 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', 0, (byte)'E', (byte)'F', (byte)'G', (byte)'H' })]
         public void ReadString_ThrowsExceptionIfStringIsNotNullTerminated(ByteOrder byteOrder, byte[] data)
         {
-            var length = data.Length;
-
-            // Create a stream with six padding bytes
-
-            var streamBuilder = new StreamBuilder(byteOrder);
-            streamBuilder.WriteBytes(new byte[] { 42, 42, 42, 42, 42, 42 });
-
-            // If the data is longer than four bytes, then write this to the stream and set the data to the offset
-
-            if (data.Length > 4)
-            {
-                streamBuilder.WriteBytes(data);
-                data = byteOrder == ByteOrder.LittleEndian ? new byte[] { 6, 0, 0, 0 } : new byte[] { 0, 0, 0, 6 };
-            }
-
-            var stream = streamBuilder.ToStream();
-
-            // Create the IFD entry and test reading the value
-
-            var entry = new TiffIfdEntry { Type = TiffType.Ascii, Count = length, Value = data };
+            var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.Ascii, data, 6, byteOrder);
+            var entry = entryTuple.Entry;
+            var stream = entryTuple.Stream;
 
             var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadString(entry, stream, byteOrder));
 
