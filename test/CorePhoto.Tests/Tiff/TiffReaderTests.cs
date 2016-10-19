@@ -556,5 +556,102 @@ namespace CorePhoto.Tests.Tiff
 
             Assert.Equal($"A value of type '{type}' cannot be converted to a signed integer.", e.Message);
         }
+
+        [Theory]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0 }, "")]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', 0 }, "ABC")]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F', 0 }, "ABCDEF")]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', 0, (byte)'E', (byte)'F', (byte)'G', (byte)'H', 0 }, "ABCD\0EFGH")]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0 }, "")]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', 0 }, "ABC")]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F', 0 }, "ABCDEF")]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', 0, (byte)'E', (byte)'F', (byte)'G', (byte)'H', 0 }, "ABCD\0EFGH")]
+        public void ReadString_ReturnsValue(ByteOrder byteOrder, byte[] data, string expectedValue)
+        {
+            var length = data.Length;
+
+            // Create a stream with six padding bytes
+
+            var streamBuilder = new StreamBuilder(byteOrder);
+            streamBuilder.WriteBytes(new byte[] { 42, 42, 42, 42, 42, 42 });
+
+            // If the data is longer than four bytes, then write this to the stream and set the data to the offset
+
+            if (data.Length > 4)
+            {
+                streamBuilder.WriteBytes(data);
+                data = byteOrder == ByteOrder.LittleEndian ? new byte[] { 6, 0, 0, 0 } : new byte[] { 0, 0, 0, 6 };
+            }
+
+            var stream = streamBuilder.ToStream();
+
+            // Create the IFD entry and test reading the value
+
+            var entry = new TiffIfdEntry { Type = TiffType.Ascii, Count = length, Value = data };
+
+            var value = TiffReader.ReadString(entry, stream, byteOrder);
+
+            Assert.Equal(expectedValue, value);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte)]
+        [InlineDataAttribute(TiffType.Short)]
+        [InlineDataAttribute(TiffType.Long)]
+        [InlineDataAttribute(TiffType.Rational)]
+        [InlineDataAttribute(TiffType.SByte)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SShort)]
+        [InlineDataAttribute(TiffType.SLong)]
+        [InlineDataAttribute(TiffType.SRational)]
+        [InlineDataAttribute(TiffType.Float)]
+        [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute((TiffType)99)]
+        public void ReadString_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadString(entry, stream, ByteOrder.LittleEndian));
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to a string.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { (byte)'A' })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C' })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F' })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', 0, (byte)'E', (byte)'F', (byte)'G', (byte)'H' })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A' })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C' })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F' })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', 0, (byte)'E', (byte)'F', (byte)'G', (byte)'H' })]
+        public void ReadString_ThrowsExceptionIfStringIsNotNullTerminated(ByteOrder byteOrder, byte[] data)
+        {
+            var length = data.Length;
+
+            // Create a stream with six padding bytes
+
+            var streamBuilder = new StreamBuilder(byteOrder);
+            streamBuilder.WriteBytes(new byte[] { 42, 42, 42, 42, 42, 42 });
+
+            // If the data is longer than four bytes, then write this to the stream and set the data to the offset
+
+            if (data.Length > 4)
+            {
+                streamBuilder.WriteBytes(data);
+                data = byteOrder == ByteOrder.LittleEndian ? new byte[] { 6, 0, 0, 0 } : new byte[] { 0, 0, 0, 6 };
+            }
+
+            var stream = streamBuilder.ToStream();
+
+            // Create the IFD entry and test reading the value
+
+            var entry = new TiffIfdEntry { Type = TiffType.Ascii, Count = length, Value = data };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadString(entry, stream, byteOrder));
+
+            Assert.Equal($"The retrieved string is not null terminated.", e.Message);
+        }
     }
 }

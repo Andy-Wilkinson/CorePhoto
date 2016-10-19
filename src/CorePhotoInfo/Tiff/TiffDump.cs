@@ -77,6 +77,8 @@ namespace CorePhotoInfo.Tiff
                         int[] array = TiffReader.ReadSignedIntegerArray(entry, _stream, byteOrder);
                         return ConvertArrayToString(array);
                     }
+                case TiffType.Ascii:
+                    return "\"" + TiffReader.ReadString(entry, _stream, byteOrder) + "\"";
                 default:
                     return "Unknown Type";
             }

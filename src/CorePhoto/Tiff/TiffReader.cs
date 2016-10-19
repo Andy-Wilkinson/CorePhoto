@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using System.Text;
 using CorePhoto.IO;
 
 namespace CorePhoto.Tiff
@@ -204,6 +205,19 @@ namespace CorePhoto.Tiff
                 default:
                     throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to a signed integer.");
             }
+        }
+
+        public static string ReadString(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            if (entry.Type != TiffType.Ascii)
+                throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to a string.");
+
+            byte[] data = ReadData(entry, stream, byteOrder);
+
+            if (data[data.Length - 1] != 0)
+                throw new ImageFormatException("The retrieved string is not null terminated.");
+
+            return Encoding.ASCII.GetString(data, 0, data.Length - 1);
         }
     }
 }
