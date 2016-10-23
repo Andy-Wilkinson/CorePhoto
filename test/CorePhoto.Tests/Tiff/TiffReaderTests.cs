@@ -372,6 +372,22 @@ namespace CorePhoto.Tests.Tiff
         }
 
         [Theory]
+        [InlineDataAttribute(TiffType.Byte, ByteOrder.LittleEndian)]
+        [InlineDataAttribute(TiffType.Short, ByteOrder.LittleEndian)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian)]
+        [InlineDataAttribute(TiffType.Byte, ByteOrder.BigEndian)]
+        [InlineDataAttribute(TiffType.Short, ByteOrder.BigEndian)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian)]
+        public void GetInteger_ThrowsExceptionIfCountIsNotOne(TiffType type, ByteOrder byteOrder)
+        {
+            var entry = new TiffIfdEntry { Type = type, Count = 2 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.GetInteger(entry, byteOrder));
+
+            Assert.Equal($"Cannot read a single value from an array of multiple items.", e.Message);
+        }
+
+        [Theory]
         [InlineDataAttribute(TiffType.SByte, ByteOrder.LittleEndian, new byte[] { 0, 1, 2, 3 }, 0)]
         [InlineDataAttribute(TiffType.SByte, ByteOrder.LittleEndian, new byte[] { 1, 2, 3, 4 }, 1)]
         [InlineDataAttribute(TiffType.SByte, ByteOrder.LittleEndian, new byte[] { 255, 2, 3, 4 }, -1)]
@@ -429,6 +445,22 @@ namespace CorePhoto.Tests.Tiff
             var e = Assert.Throws<ImageFormatException>(() => TiffReader.GetSignedInteger(entry, ByteOrder.LittleEndian));
 
             Assert.Equal($"A value of type '{type}' cannot be converted to a signed integer.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.SByte, ByteOrder.LittleEndian)]
+        [InlineDataAttribute(TiffType.SShort, ByteOrder.LittleEndian)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.LittleEndian)]
+        [InlineDataAttribute(TiffType.SByte, ByteOrder.BigEndian)]
+        [InlineDataAttribute(TiffType.SShort, ByteOrder.BigEndian)]
+        [InlineDataAttribute(TiffType.SLong, ByteOrder.BigEndian)]
+        public void GetSignedInteger_ThrowsExceptionIfCountIsNotOne(TiffType type, ByteOrder byteOrder)
+        {
+            var entry = new TiffIfdEntry { Type = type, Count = 2 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.GetSignedInteger(entry, byteOrder));
+
+            Assert.Equal($"Cannot read a single value from an array of multiple items.", e.Message);
         }
 
         [Theory]
@@ -686,7 +718,7 @@ namespace CorePhoto.Tests.Tiff
         public void ReadRational_ThrowsExceptionIfInvalidType(TiffType type)
         {
             var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
-            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+            var entry = new TiffIfdEntry { Type = type, Count = 1 };
 
             var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadRational(entry, stream, ByteOrder.LittleEndian));
 
@@ -709,7 +741,7 @@ namespace CorePhoto.Tests.Tiff
         public void ReadSignedRational_ThrowsExceptionIfInvalidType(TiffType type)
         {
             var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
-            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+            var entry = new TiffIfdEntry { Type = type, Count = 1 };
 
             var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadSignedRational(entry, stream, ByteOrder.LittleEndian));
 
@@ -760,6 +792,30 @@ namespace CorePhoto.Tests.Tiff
             var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadSignedRationalArray(entry, stream, ByteOrder.LittleEndian));
 
             Assert.Equal($"A value of type '{type}' cannot be converted to a SignedRational.", e.Message);
+        }
+
+        [Theory]
+        [MemberDataAttribute(nameof(ByteOrderValues))]
+        public void ReadRational_ThrowsExceptionIfCountIsNotOne(ByteOrder byteOrder)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = TiffType.Rational, Count = 2 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadRational(entry, stream, byteOrder));
+
+            Assert.Equal($"Cannot read a single value from an array of multiple items.", e.Message);
+        }
+
+        [Theory]
+        [MemberDataAttribute(nameof(ByteOrderValues))]
+        public void ReadSignedRational_ThrowsExceptionIfCountIsNotOne(ByteOrder byteOrder)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = TiffType.SRational, Count = 2 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadSignedRational(entry, stream, byteOrder));
+
+            Assert.Equal($"Cannot read a single value from an array of multiple items.", e.Message);
         }
     }
 }

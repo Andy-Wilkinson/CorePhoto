@@ -132,6 +132,9 @@ namespace CorePhoto.Tiff
 
         public static uint GetInteger(TiffIfdEntry entry, ByteOrder byteOrder)
         {
+            if (entry.Count != 1)
+                throw new ImageFormatException("Cannot read a single value from an array of multiple items.");
+
             switch (entry.Type)
             {
                 case TiffType.Byte:
@@ -147,6 +150,9 @@ namespace CorePhoto.Tiff
 
         public static int GetSignedInteger(TiffIfdEntry entry, ByteOrder byteOrder)
         {
+            if (entry.Count != 1)
+                throw new ImageFormatException("Cannot read a single value from an array of multiple items.");
+
             switch (entry.Type)
             {
                 case TiffType.SByte:
@@ -223,12 +229,18 @@ namespace CorePhoto.Tiff
 
         public static Rational ReadRational(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
         {
+            if (entry.Count != 1)
+                throw new ImageFormatException("Cannot read a single value from an array of multiple items.");
+
             var array = ReadRationalArray(entry, stream, byteOrder);
             return array[0];
         }
 
         public static SignedRational ReadSignedRational(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
         {
+            if (entry.Count != 1)
+                throw new ImageFormatException("Cannot read a single value from an array of multiple items.");
+
             var array = ReadSignedRationalArray(entry, stream, byteOrder);
             return array[0];
         }
