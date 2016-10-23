@@ -1,5 +1,12 @@
 namespace CorePhoto.Tiff
 {
+    // TODO : TIFF-F (http://www.awaresystems.be/imaging/tiff/tifftags/extension.html)
+    // TODO : TIFF-FX (http://www.awaresystems.be/imaging/tiff/tifftags/extension.html)
+    // TODO : RFC 2301 (http://www.awaresystems.be/imaging/tiff/tifftags/extension.html)
+    // TODO : XMP (http://www.awaresystems.be/imaging/tiff/tifftags/extension.html)
+    // TODO : Private TIFF Tags (http://www.awaresystems.be/imaging/tiff/tifftags/private.html)
+    // TODO : Private IFD Tags (http://www.awaresystems.be/imaging/tiff/tifftags/privateifd.html)
+
     public enum TiffTag
     {
         // Section 8: Baseline Fields
@@ -108,6 +115,48 @@ namespace CorePhoto.Tiff
         JpegQTables = 519,
         JpegDCTables = 520,
         JpegACTables = 521,
+
+        // TIFF Supplement 1: Adobe Pagemaker 6.0
+
+        SubIFDs = 330,
+        ClipPath = 343,
+        XClipPathUnits = 344,
+        YClipPathUnits = 345,
+        Indexed = 346,
+        ImageID = 32781,
+        OpiProxy = 351,
+
+        // TIFF Supplement 2: Adobe Photoshop
+
+        ImageSourceData = 37724,
+
+        // TIFF/EP Specification: Additional Tags
+
+        JPEGTables = 0x015B,
+        CFARepeatPatternDim = 0x828D,
+        BatteryLevel = 0x828F,
+        IptcNaa = 0x83BB,
+        InterColorProfile = 0x8773,
+        Interlace = 0x8829,
+        TimeZoneOffset = 0x882A,
+        SelfTimerMode = 0x882B,
+        Noise = 0x920D,
+        ImageNumber = 0x9211,
+        SecurityClassification = 0x9212,
+        ImageHistory = 0x9213,
+        TiffEPStandardID = 0x9216,
+
+        // TIFF/EP Specification: Redefined EXIF tags
+
+        FlashEnergy = 0x920B,
+        SpatialFrequencyResponse = 0x920C,
+        FocalPlaneXResolution = 0x920E,
+        FocalPlaneYResolution = 0x920F,
+        FocalPlaneResolutionUnit = 0x9210,
+        SubjectLocation = 0x9214,
+        ExposureIndex = 0x9215,
+        SensingMethod = 0x9216,
+        CFAPattern = 0x828E,
 
         // DNG Specification: DNG Specific Tags
 

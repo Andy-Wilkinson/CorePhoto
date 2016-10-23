@@ -13,6 +13,7 @@ namespace CorePhoto.Tiff
         SLong = 9,
         SRational = 10,
         Float = 11,
-        Double = 12
+        Double = 12,
+        Ifd = 13
     }
 }
