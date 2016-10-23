@@ -5,6 +5,7 @@ using Xunit;
 using System;
 using CorePhoto.Numerics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace CorePhoto.Tests.Tiff
 {
@@ -13,7 +14,7 @@ namespace CorePhoto.Tests.Tiff
         public static object[][] ByteOrderValues = new[] { new object[] { ByteOrder.LittleEndian }, new object[] { ByteOrder.BigEndian } };
 
         [Fact]
-        public void ReadHeader_ReadsCorrectly_LittleEndian()
+        public async Task ReadHeaderAsync_ReadsCorrectly_LittleEndian()
         {
             var stream = new StreamBuilder(ByteOrder.LittleEndian)
                                      .WriteBytes(0x49, 0x49)
@@ -21,14 +22,14 @@ namespace CorePhoto.Tests.Tiff
                                      .WriteUInt32(123456)
                                      .ToStream();
 
-            var header = TiffReader.ReadHeader(stream);
+            var header = await TiffReader.ReadHeaderAsync(stream);
 
             Assert.Equal(ByteOrder.LittleEndian, header.ByteOrder);
             Assert.Equal(123456u, header.FirstIfdOffset);
         }
 
         [Fact]
-        public void ReadHeader_ReadsCorrectly_BigEndian()
+        public async Task ReadHeaderAsync_ReadsCorrectly_BigEndian()
         {
             var stream = new StreamBuilder(ByteOrder.BigEndian)
                                      .WriteBytes(0x4D, 0x4D)
@@ -36,14 +37,14 @@ namespace CorePhoto.Tests.Tiff
                                      .WriteUInt32(123456)
                                      .ToStream();
 
-            var header = TiffReader.ReadHeader(stream);
+            var header = await TiffReader.ReadHeaderAsync(stream);
 
             Assert.Equal(ByteOrder.BigEndian, header.ByteOrder);
             Assert.Equal(123456u, header.FirstIfdOffset);
         }
 
         [Fact]
-        public void ReadHeader_ThrowsException_IfFirstByteOrderMarkerIsUnknown()
+        public async Task ReadHeaderAsync_ThrowsException_IfFirstByteOrderMarkerIsUnknown()
         {
             var stream = new StreamBuilder(ByteOrder.BigEndian)
                                      .WriteBytes(0xAB, 0x4D)
@@ -51,13 +52,13 @@ namespace CorePhoto.Tests.Tiff
                                      .WriteUInt32(123456)
                                      .ToStream();
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadHeader(stream));
+            var e = await Assert.ThrowsAsync<ImageFormatException>(() => TiffReader.ReadHeaderAsync(stream));
 
             Assert.Equal("The TIFF byte order markers are invalid.", e.Message);
         }
 
         [Fact]
-        public void ReadHeader_ThrowsException_IfSecondByteOrderMarkerIsUnknown()
+        public async Task ReadHeaderAsync_ThrowsException_IfSecondByteOrderMarkerIsUnknown()
         {
             var stream = new StreamBuilder(ByteOrder.BigEndian)
                                      .WriteBytes(0x4D, 0xAB)
@@ -65,13 +66,13 @@ namespace CorePhoto.Tests.Tiff
                                      .WriteUInt32(123456)
                                      .ToStream();
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadHeader(stream));
+            var e = await Assert.ThrowsAsync<ImageFormatException>(() => TiffReader.ReadHeaderAsync(stream));
 
             Assert.Equal("The TIFF byte order markers are invalid.", e.Message);
         }
 
         [Fact]
-        public void ReadHeader_ThrowsException_MagicNumberIsIncorrect()
+        public async Task ReadHeaderAsync_ThrowsException_MagicNumberIsIncorrect()
         {
             var stream = new StreamBuilder(ByteOrder.BigEndian)
                                      .WriteBytes(0x4D, 0x4D)
@@ -79,14 +80,14 @@ namespace CorePhoto.Tests.Tiff
                                      .WriteUInt32(123456)
                                      .ToStream();
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadHeader(stream));
+            var e = await Assert.ThrowsAsync<ImageFormatException>(() => TiffReader.ReadHeaderAsync(stream));
 
             Assert.Equal("The TIFF header does not contain the expected magic number.", e.Message);
         }
 
         [Theory]
         [MemberDataAttribute(nameof(ByteOrderValues))]
-        public void ReadIfd_ReadsCorrectlyWithOffset(ByteOrder byteOrder)
+        public async Task ReadIfdAsync_ReadsCorrectlyWithOffset(ByteOrder byteOrder)
         {
             var stream = new StreamBuilder(byteOrder)
                                     .WritePadding(20)
@@ -97,7 +98,7 @@ namespace CorePhoto.Tests.Tiff
                                     .WriteUInt32(123456)
                                     .ToStream();
 
-            var ifd = TiffReader.ReadIfd(stream, byteOrder, 20);
+            var ifd = await TiffReader.ReadIfdAsync(stream, byteOrder, 20);
 
             Assert.Equal(3, ifd.Entries.Length);
             AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
@@ -108,16 +109,17 @@ namespace CorePhoto.Tests.Tiff
 
         [Theory]
         [MemberDataAttribute(nameof(ByteOrderValues))]
-        public void ReadIfdEntry_ReadsCorrectly(ByteOrder byteOrder)
+        public void ParseIfdEntry_ReadsCorrectly(ByteOrder byteOrder)
         {
-            var stream = new StreamBuilder(byteOrder)
+            var bytes = new StreamBuilder(byteOrder)
+                                    .WritePadding(20)
                                     .WriteInt16(167)
                                     .WriteInt16(5)
                                     .WriteUInt32(123456)
                                     .WriteBytes(new byte[] { 3, 4, 5, 6 })
-                                    .ToStream();
+                                    .ToBytes();
 
-            var ifdEntry = TiffReader.ReadIfdEntry(stream, byteOrder);
+            var ifdEntry = TiffReader.ParseIfdEntry(bytes, 20, byteOrder);
 
             Assert.Equal((TiffTag)167, ifdEntry.Tag);
             Assert.Equal(TiffType.Rational, ifdEntry.Type);
@@ -127,7 +129,7 @@ namespace CorePhoto.Tests.Tiff
 
         [Theory]
         [MemberDataAttribute(nameof(ByteOrderValues))]
-        public void ReadFirstIfd_ReadsCorrectly(ByteOrder byteOrder)
+        public async Task ReadFirstIfdAsync_ReadsCorrectly(ByteOrder byteOrder)
         {
             var stream = new StreamBuilder(byteOrder)
                                     .WritePadding(20)
@@ -139,7 +141,7 @@ namespace CorePhoto.Tests.Tiff
                                     .ToStream();
 
             var header = new TiffHeader { FirstIfdOffset = 20 };
-            var ifd = TiffReader.ReadFirstIfd(header, stream, byteOrder);
+            var ifd = await TiffReader.ReadFirstIfdAsync(header, stream, byteOrder);
 
             Assert.Equal(3, ifd.Entries.Length);
             AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
@@ -150,7 +152,7 @@ namespace CorePhoto.Tests.Tiff
 
         [Theory]
         [MemberDataAttribute(nameof(ByteOrderValues))]
-        public void ReadNextIfd_ReadsCorrectly(ByteOrder byteOrder)
+        public async Task ReadNextIfdAsync_ReadsCorrectly(ByteOrder byteOrder)
         {
             var stream = new StreamBuilder(byteOrder)
                                     .WritePadding(20)
@@ -162,7 +164,7 @@ namespace CorePhoto.Tests.Tiff
                                     .ToStream();
 
             var previousIfd = new TiffIfd { NextIfdOffset = 20 };
-            var ifd = TiffReader.ReadNextIfd(previousIfd, stream, byteOrder).Value;
+            var ifd = (await TiffReader.ReadNextIfdAsync(previousIfd, stream, byteOrder)).Value;
 
             Assert.Equal(3, ifd.Entries.Length);
             AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
@@ -173,7 +175,7 @@ namespace CorePhoto.Tests.Tiff
 
         [Theory]
         [MemberDataAttribute(nameof(ByteOrderValues))]
-        public void ReadNextIfd_ReturnsNullIfLastIfd(ByteOrder byteOrder)
+        public async Task ReadNextIfdAsync_ReturnsNullIfLastIfd(ByteOrder byteOrder)
         {
             var stream = new StreamBuilder(byteOrder)
                                     .WriteInt16(3)
@@ -184,7 +186,7 @@ namespace CorePhoto.Tests.Tiff
                                     .ToStream();
 
             var previousIfd = new TiffIfd { NextIfdOffset = 00 };
-            var ifd = TiffReader.ReadNextIfd(previousIfd, stream, byteOrder);
+            var ifd = await TiffReader.ReadNextIfdAsync(previousIfd, stream, byteOrder);
 
             Assert.Null(ifd);
         }
@@ -196,14 +198,14 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, 4, new byte[] { }, new byte[] { 1, 2, 3, 4 })]
         [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 4, 0, 0, 0 }, 5, new byte[] { 0, 0, 0, 0, 1, 2, 3, 4, 5 }, new byte[] { 1, 2, 3, 4, 5 })]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 4 }, 5, new byte[] { 0, 0, 0, 0, 1, 2, 3, 4, 5 }, new byte[] { 1, 2, 3, 4, 5 })]
-        public void ReadData_ReturnsExpectedData_Byte(ByteOrder byteOrder, byte[] ifdValue, int count, byte[] data, byte[] expectedValue)
+        public async Task ReadDataAsync_ReturnsExpectedData_Byte(ByteOrder byteOrder, byte[] ifdValue, int count, byte[] data, byte[] expectedValue)
         {
             var stream = new StreamBuilder(byteOrder)
                                     .WriteBytes(data)
                                     .ToStream();
 
             var entry = new TiffIfdEntry { Type = TiffType.Byte, Count = count, Value = ifdValue };
-            var value = TiffReader.ReadData(entry, stream, byteOrder);
+            var value = await TiffReader.ReadDataAsync(entry, stream, byteOrder);
 
             Assert.Equal(expectedValue, value);
         }
@@ -480,13 +482,13 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Long, 2, ByteOrder.LittleEndian, new byte[] { 4, 3, 2, 1, 6, 5, 4, 3, 99, 99 }, new uint[] { 0x01020304, 0x03040506 })]
         [InlineDataAttribute(TiffType.Long, 1, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, new uint[] { 0x01020304 })]
         [InlineDataAttribute(TiffType.Long, 2, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4, 3, 4, 5, 6, 99, 99 }, new uint[] { 0x01020304, 0x03040506 })]
-        public void ReadIntegerArray_ReturnsValue(TiffType type, int count, ByteOrder byteOrder, byte[] data, uint[] expectedValue)
+        public async Task ReadIntegerArrayAsync_ReturnsValue(TiffType type, int count, ByteOrder byteOrder, byte[] data, uint[] expectedValue)
         {
             var entryTuple = TiffHelper.GenerateTiffIfdEntry(type, data, 6, byteOrder, count);
             var entry = entryTuple.Entry;
             var stream = entryTuple.Stream;
 
-            var value = TiffReader.ReadIntegerArray(entry, stream, byteOrder);
+            var value = await TiffReader.ReadIntegerArrayAsync(entry, stream, byteOrder);
 
             Assert.Equal(expectedValue, value);
         }
@@ -502,12 +504,12 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
         [InlineDataAttribute((TiffType)99)]
-        public void ReadIntegerArray_ThrowsExceptionIfInvalidType(TiffType type)
+        public void ReadIntegerArrayAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
             var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
             var entry = new TiffIfdEntry { Type = type, Count = 10 };
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadIntegerArray(entry, stream, ByteOrder.LittleEndian));
+            var e = Assert.Throws<ImageFormatException>(() => { TiffReader.ReadIntegerArrayAsync(entry, stream, ByteOrder.LittleEndian); });
 
             Assert.Equal($"A value of type '{type}' cannot be converted to an unsigned integer.", e.Message);
         }
@@ -529,13 +531,13 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SLong, 2, ByteOrder.LittleEndian, new byte[] { 4, 3, 2, 1, 255, 255, 255, 255, 99, 99 }, new int[] { 0x01020304, -1 })]
         [InlineDataAttribute(TiffType.SLong, 1, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, new int[] { 0x01020304 })]
         [InlineDataAttribute(TiffType.SLong, 2, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4, 255, 255, 255, 255, 99, 99 }, new int[] { 0x01020304, -1 })]
-        public void ReadSignedIntegerArray_ReturnsValue(TiffType type, int count, ByteOrder byteOrder, byte[] data, int[] expectedValue)
+        public async Task ReadSignedIntegerArrayAsync_ReturnsValue(TiffType type, int count, ByteOrder byteOrder, byte[] data, int[] expectedValue)
         {
             var entryTuple = TiffHelper.GenerateTiffIfdEntry(type, data, 6, byteOrder, count);
             var entry = entryTuple.Entry;
             var stream = entryTuple.Stream;
 
-            var value = TiffReader.ReadSignedIntegerArray(entry, stream, byteOrder);
+            var value = await TiffReader.ReadSignedIntegerArrayAsync(entry, stream, byteOrder);
 
             Assert.Equal(expectedValue, value);
         }
@@ -551,12 +553,12 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
         [InlineDataAttribute((TiffType)99)]
-        public void ReadSignedIntegerArray_ThrowsExceptionIfInvalidType(TiffType type)
+        public void ReadSignedIntegerArrayAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
             var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
             var entry = new TiffIfdEntry { Type = type, Count = 10 };
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadSignedIntegerArray(entry, stream, ByteOrder.LittleEndian));
+            var e = Assert.Throws<ImageFormatException>(() => { TiffReader.ReadSignedIntegerArrayAsync(entry, stream, ByteOrder.LittleEndian); });
 
             Assert.Equal($"A value of type '{type}' cannot be converted to a signed integer.", e.Message);
         }
@@ -570,13 +572,13 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', 0 }, "ABC")]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F', 0 }, "ABCDEF")]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', 0, (byte)'E', (byte)'F', (byte)'G', (byte)'H', 0 }, "ABCD\0EFGH")]
-        public void ReadString_ReturnsValue(ByteOrder byteOrder, byte[] data, string expectedValue)
+        public async Task ReadStringAsync_ReturnsValue(ByteOrder byteOrder, byte[] data, string expectedValue)
         {
             var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.Ascii, data, 6, byteOrder);
             var entry = entryTuple.Entry;
             var stream = entryTuple.Stream;
 
-            var value = TiffReader.ReadString(entry, stream, byteOrder);
+            var value = await TiffReader.ReadStringAsync(entry, stream, byteOrder);
 
             Assert.Equal(expectedValue, value);
         }
@@ -594,12 +596,12 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
         [InlineDataAttribute((TiffType)99)]
-        public void ReadString_ThrowsExceptionIfInvalidType(TiffType type)
+        public void ReadStringAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
             var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
             var entry = new TiffIfdEntry { Type = type, Count = 10 };
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadString(entry, stream, ByteOrder.LittleEndian));
+            var e = Assert.Throws<ImageFormatException>(() => { TiffReader.ReadStringAsync(entry, stream, ByteOrder.LittleEndian); });
 
             Assert.Equal($"A value of type '{type}' cannot be converted to a string.", e.Message);
         }
@@ -613,13 +615,13 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C' })]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F' })]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { (byte)'A', (byte)'B', (byte)'C', (byte)'D', 0, (byte)'E', (byte)'F', (byte)'G', (byte)'H' })]
-        public void ReadString_ThrowsExceptionIfStringIsNotNullTerminated(ByteOrder byteOrder, byte[] data)
+        public async Task ReadStringAsync_ThrowsExceptionIfStringIsNotNullTerminated(ByteOrder byteOrder, byte[] data)
         {
             var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.Ascii, data, 6, byteOrder);
             var entry = entryTuple.Entry;
             var stream = entryTuple.Stream;
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadString(entry, stream, byteOrder));
+            var e = await Assert.ThrowsAsync<ImageFormatException>(() => TiffReader.ReadStringAsync(entry, stream, byteOrder));
 
             Assert.Equal($"The retrieved string is not null terminated.", e.Message);
         }
@@ -629,13 +631,13 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 1, 0, 0, 0, 2, 0, 0, 0 }, 1, 2)]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 0, 0, 0, 0, 2 }, 0, 2)]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1, 0, 0, 0, 2 }, 1, 2)]
-        public void ReadRational_ReturnsValue(ByteOrder byteOrder, byte[] data, uint expectedNumerator, uint expectedDenominator)
+        public async Task ReadRationalAsync_ReturnsValue(ByteOrder byteOrder, byte[] data, uint expectedNumerator, uint expectedDenominator)
         {
             var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.Rational, data, 6, byteOrder);
             var entry = entryTuple.Entry;
             var stream = entryTuple.Stream;
 
-            var value = TiffReader.ReadRational(entry, stream, byteOrder);
+            var value = await TiffReader.ReadRationalAsync(entry, stream, byteOrder);
 
             Assert.Equal(expectedNumerator, value.Numerator);
             Assert.Equal(expectedDenominator, value.Denominator);
@@ -648,13 +650,13 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 0, 0, 0, 0, 2 }, 0, 2)]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1, 0, 0, 0, 2 }, 1, 2)]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 255, 255, 255, 255, 0, 0, 0, 2 }, -1, 2)]
-        public void ReadSignedRational_ReturnsValue(ByteOrder byteOrder, byte[] data, int expectedNumerator, int expectedDenominator)
+        public async Task ReadSignedRationalAsync_ReturnsValue(ByteOrder byteOrder, byte[] data, int expectedNumerator, int expectedDenominator)
         {
             var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.SRational, data, 6, byteOrder);
             var entry = entryTuple.Entry;
             var stream = entryTuple.Stream;
 
-            var value = TiffReader.ReadSignedRational(entry, stream, byteOrder);
+            var value = await TiffReader.ReadSignedRationalAsync(entry, stream, byteOrder);
 
             Assert.Equal(expectedNumerator, value.Numerator);
             Assert.Equal(expectedDenominator, value.Denominator);
@@ -667,13 +669,13 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 0, 0, 0, 0, 2 }, new uint[] { 0 }, new uint[] { 2 })]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1, 0, 0, 0, 2 }, new uint[] { 1 }, new uint[] { 2 })]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 3 }, new uint[] { 1, 2 }, new uint[] { 2, 3 })]
-        public void ReadRationalArray_ReturnsValue(ByteOrder byteOrder, byte[] data, uint[] expectedNumerators, uint[] expectedDenominators)
+        public async Task ReadRationalArrayAsync_ReturnsValue(ByteOrder byteOrder, byte[] data, uint[] expectedNumerators, uint[] expectedDenominators)
         {
             var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.Rational, data, 6, byteOrder);
             var entry = entryTuple.Entry;
             var stream = entryTuple.Stream;
 
-            var value = TiffReader.ReadRationalArray(entry, stream, byteOrder);
+            var value = await TiffReader.ReadRationalArrayAsync(entry, stream, byteOrder);
 
             var expectedValues = Enumerable.Range(0, expectedNumerators.Length).Select(i => new Rational(expectedNumerators[i], expectedDenominators[i])).ToArray();
 
@@ -689,13 +691,13 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1, 0, 0, 0, 2 }, new int[] { 1 }, new int[] { 2 })]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 255, 255, 255, 255, 0, 0, 0, 2 }, new int[] { -1 }, new int[] { 2 })]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 255, 255, 255, 255, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 3 }, new int[] { -1, 2 }, new int[] { 2, 3 })]
-        public void ReadSignedRationalArray_ReturnsValue(ByteOrder byteOrder, byte[] data, int[] expectedNumerators, int[] expectedDenominators)
+        public async Task ReadSignedRationalArrayAsync_ReturnsValue(ByteOrder byteOrder, byte[] data, int[] expectedNumerators, int[] expectedDenominators)
         {
             var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.SRational, data, 6, byteOrder);
             var entry = entryTuple.Entry;
             var stream = entryTuple.Stream;
 
-            var value = TiffReader.ReadSignedRationalArray(entry, stream, byteOrder);
+            var value = await TiffReader.ReadSignedRationalArrayAsync(entry, stream, byteOrder);
 
             var expectedValues = Enumerable.Range(0, expectedNumerators.Length).Select(i => new SignedRational(expectedNumerators[i], expectedDenominators[i])).ToArray();
 
@@ -715,12 +717,12 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
         [InlineDataAttribute((TiffType)99)]
-        public void ReadRational_ThrowsExceptionIfInvalidType(TiffType type)
+        public void ReadRationalAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
             var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
             var entry = new TiffIfdEntry { Type = type, Count = 1 };
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadRational(entry, stream, ByteOrder.LittleEndian));
+            var e = Assert.Throws<ImageFormatException>(() => { TiffReader.ReadRationalAsync(entry, stream, ByteOrder.LittleEndian); });
 
             Assert.Equal($"A value of type '{type}' cannot be converted to a Rational.", e.Message);
         }
@@ -738,12 +740,12 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
         [InlineDataAttribute((TiffType)99)]
-        public void ReadSignedRational_ThrowsExceptionIfInvalidType(TiffType type)
+        public void ReadSignedRationalAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
             var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
             var entry = new TiffIfdEntry { Type = type, Count = 1 };
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadSignedRational(entry, stream, ByteOrder.LittleEndian));
+            var e = Assert.Throws<ImageFormatException>(() => { TiffReader.ReadSignedRationalAsync(entry, stream, ByteOrder.LittleEndian); });
 
             Assert.Equal($"A value of type '{type}' cannot be converted to a SignedRational.", e.Message);
         }
@@ -761,12 +763,12 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
         [InlineDataAttribute((TiffType)99)]
-        public void ReadRationalArray_ThrowsExceptionIfInvalidType(TiffType type)
+        public void ReadRationalArrayAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
             var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
             var entry = new TiffIfdEntry { Type = type, Count = 10 };
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadRationalArray(entry, stream, ByteOrder.LittleEndian));
+            var e = Assert.Throws<ImageFormatException>(() => { TiffReader.ReadRationalArrayAsync(entry, stream, ByteOrder.LittleEndian); });
 
             Assert.Equal($"A value of type '{type}' cannot be converted to a Rational.", e.Message);
         }
@@ -784,36 +786,36 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
         [InlineDataAttribute((TiffType)99)]
-        public void ReadSignedRationalArray_ThrowsExceptionIfInvalidType(TiffType type)
+        public void ReadSignedRationalArrayAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
             var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
             var entry = new TiffIfdEntry { Type = type, Count = 10 };
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadSignedRationalArray(entry, stream, ByteOrder.LittleEndian));
+            var e = Assert.Throws<ImageFormatException>(() => { TiffReader.ReadSignedRationalArrayAsync(entry, stream, ByteOrder.LittleEndian); });
 
             Assert.Equal($"A value of type '{type}' cannot be converted to a SignedRational.", e.Message);
         }
 
         [Theory]
         [MemberDataAttribute(nameof(ByteOrderValues))]
-        public void ReadRational_ThrowsExceptionIfCountIsNotOne(ByteOrder byteOrder)
+        public void ReadRationalAsync_ThrowsExceptionIfCountIsNotOne(ByteOrder byteOrder)
         {
             var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
             var entry = new TiffIfdEntry { Type = TiffType.Rational, Count = 2 };
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadRational(entry, stream, byteOrder));
+            var e = Assert.Throws<ImageFormatException>(() => { TiffReader.ReadRationalAsync(entry, stream, byteOrder); });
 
             Assert.Equal($"Cannot read a single value from an array of multiple items.", e.Message);
         }
 
         [Theory]
         [MemberDataAttribute(nameof(ByteOrderValues))]
-        public void ReadSignedRational_ThrowsExceptionIfCountIsNotOne(ByteOrder byteOrder)
+        public void ReadSignedRationalAsync_ThrowsExceptionIfCountIsNotOne(ByteOrder byteOrder)
         {
             var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
             var entry = new TiffIfdEntry { Type = TiffType.SRational, Count = 2 };
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadSignedRational(entry, stream, byteOrder));
+            var e = Assert.Throws<ImageFormatException>(() => { TiffReader.ReadSignedRationalAsync(entry, stream, byteOrder); });
 
             Assert.Equal($"Cannot read a single value from an array of multiple items.", e.Message);
         }

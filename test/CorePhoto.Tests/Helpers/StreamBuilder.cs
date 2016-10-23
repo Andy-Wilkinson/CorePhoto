@@ -28,6 +28,17 @@ namespace CorePhoto.Tests.Helpers
             return Stream;
         }
 
+        public byte[] ToBytes()
+        {
+            Stream.Flush();
+            Stream.Seek(0, SeekOrigin.Begin);
+
+            int length = (int)Stream.Length;
+            byte[] buffer = new byte[length];
+            Stream.Read(buffer, 0, length);
+            return buffer;
+        }
+
         public StreamBuilder WriteByte(byte value)
         {
             Stream.WriteByte(value);

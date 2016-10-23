@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using CorePhoto.IO;
 using CorePhoto.Tiff;
 using CorePhotoInfo.Reporting;
@@ -17,43 +18,43 @@ namespace CorePhotoInfo.Tiff
             _report = reportWriter;
         }
 
-        private void WriteTiffInfo()
+        private async Task WriteTiffInfoAsync()
         {
-            TiffHeader header = TiffReader.ReadHeader(_stream);
+            TiffHeader header = await TiffReader.ReadHeaderAsync(_stream);
 
             _report.WriteSubheader("TiffHeader");
             _report.WriteLine("Byte order       : {0}", header.ByteOrder);
 
-            TiffIfd? ifd = TiffReader.ReadFirstIfd(header, _stream, header.ByteOrder);
+            TiffIfd? ifd = await TiffReader.ReadFirstIfdAsync(header, _stream, header.ByteOrder);
             int ifdId = 0;
 
             while (ifd != null)
             {
                 _report.WriteSubheader("IFD {0}", ifdId);
-                WriteTiffIfdInfo(ifd.Value, header.ByteOrder);
+                await WriteTiffIfdInfoAsync(ifd.Value, header.ByteOrder);
 
-                ifd = TiffReader.ReadNextIfd(ifd.Value, _stream, header.ByteOrder);
+                ifd = await TiffReader.ReadNextIfdAsync(ifd.Value, _stream, header.ByteOrder);
                 ifdId++;
             }
         }
 
-        private void WriteTiffIfdInfo(TiffIfd ifd, ByteOrder byteOrder)
+        private async Task WriteTiffIfdInfoAsync(TiffIfd ifd, ByteOrder byteOrder)
         {
             foreach (TiffIfdEntry entry in ifd.Entries)
             {
-                WriteTiffIfdEntryInfo(entry, byteOrder);
+                await WriteTiffIfdEntryInfoAsync(entry, byteOrder);
             }
         }
 
-        private void WriteTiffIfdEntryInfo(TiffIfdEntry entry, ByteOrder byteOrder)
+        private async Task WriteTiffIfdEntryInfoAsync(TiffIfdEntry entry, ByteOrder byteOrder)
         {
             var typeStr = entry.Count == 1 ? $"{entry.Type}" : $"{entry.Type}[{entry.Count}]";
-            string value = GetTiffIfdEntryData(entry, byteOrder);
+            string value = await GetTiffIfdEntryDataAsync(entry, byteOrder);
 
             _report.WriteLine($"{entry.Tag} ({typeStr}) = {value}");
         }
 
-        private string GetTiffIfdEntryData(TiffIfdEntry entry, ByteOrder byteOrder)
+        private async Task<string> GetTiffIfdEntryDataAsync(TiffIfdEntry entry, ByteOrder byteOrder)
         {
             switch (entry.Type)
             {
@@ -64,7 +65,7 @@ namespace CorePhotoInfo.Tiff
                         return TiffReader.GetInteger(entry, byteOrder).ToString();
                     else
                     {
-                        var array = TiffReader.ReadIntegerArray(entry, _stream, byteOrder);
+                        var array = await TiffReader.ReadIntegerArrayAsync(entry, _stream, byteOrder);
                         return ConvertArrayToString(array);
                     }
                 case TiffType.SByte:
@@ -74,25 +75,25 @@ namespace CorePhotoInfo.Tiff
                         return TiffReader.GetSignedInteger(entry, byteOrder).ToString();
                     else
                     {
-                        var array = TiffReader.ReadSignedIntegerArray(entry, _stream, byteOrder);
+                        var array = await TiffReader.ReadSignedIntegerArrayAsync(entry, _stream, byteOrder);
                         return ConvertArrayToString(array);
                     }
                 case TiffType.Ascii:
-                    return "\"" + TiffReader.ReadString(entry, _stream, byteOrder) + "\"";
+                    return "\"" + await TiffReader.ReadStringAsync(entry, _stream, byteOrder) + "\"";
                 case TiffType.Rational:
                     if (entry.Count == 1)
-                        return TiffReader.ReadRational(entry, _stream, byteOrder).ToString();
+                        return (await TiffReader.ReadRationalAsync(entry, _stream, byteOrder)).ToString();
                     else
                     {
-                        var array = TiffReader.ReadRationalArray(entry, _stream, byteOrder);
+                        var array = await TiffReader.ReadRationalArrayAsync(entry, _stream, byteOrder);
                         return ConvertArrayToString(array);
                     }
                 case TiffType.SRational:
                     if (entry.Count == 1)
-                        return TiffReader.ReadSignedRational(entry, _stream, byteOrder).ToString();
+                        return (await TiffReader.ReadSignedRationalAsync(entry, _stream, byteOrder)).ToString();
                     else
                     {
-                        var array = TiffReader.ReadSignedRationalArray(entry, _stream, byteOrder);
+                        var array = await TiffReader.ReadSignedRationalArrayAsync(entry, _stream, byteOrder);
                         return ConvertArrayToString(array);
                     }
                 default:
@@ -113,7 +114,7 @@ namespace CorePhotoInfo.Tiff
         public static void WriteTiffInfo(Stream stream, IReportWriter reportWriter)
         {
             TiffDump instance = new TiffDump(stream, reportWriter);
-            instance.WriteTiffInfo();
+            instance.WriteTiffInfoAsync().Wait();
         }
     }
 }

@@ -49,5 +49,12 @@ namespace CorePhoto.IO
         {
             return (uint)ToInt32(bytes, offset, byteOrder);
         }
+
+        public static byte[] ToBytes(byte[] bytes, int offset, int count)
+        {
+            byte[] buffer = new byte[count];
+            Array.Copy(bytes, offset, buffer, 0, count);
+            return buffer;
+        }
     }
 }
