@@ -64,7 +64,7 @@ namespace CorePhotoInfo.Tiff
                         return TiffReader.GetInteger(entry, byteOrder).ToString();
                     else
                     {
-                        uint[] array = TiffReader.ReadIntegerArray(entry, _stream, byteOrder);
+                        var array = TiffReader.ReadIntegerArray(entry, _stream, byteOrder);
                         return ConvertArrayToString(array);
                     }
                 case TiffType.SByte:
@@ -74,11 +74,27 @@ namespace CorePhotoInfo.Tiff
                         return TiffReader.GetSignedInteger(entry, byteOrder).ToString();
                     else
                     {
-                        int[] array = TiffReader.ReadSignedIntegerArray(entry, _stream, byteOrder);
+                        var array = TiffReader.ReadSignedIntegerArray(entry, _stream, byteOrder);
                         return ConvertArrayToString(array);
                     }
                 case TiffType.Ascii:
                     return "\"" + TiffReader.ReadString(entry, _stream, byteOrder) + "\"";
+                case TiffType.Rational:
+                    if (entry.Count == 1)
+                        return TiffReader.ReadRational(entry, _stream, byteOrder).ToString();
+                    else
+                    {
+                        var array = TiffReader.ReadRationalArray(entry, _stream, byteOrder);
+                        return ConvertArrayToString(array);
+                    }
+                case TiffType.SRational:
+                    if (entry.Count == 1)
+                        return TiffReader.ReadSignedRational(entry, _stream, byteOrder).ToString();
+                    else
+                    {
+                        var array = TiffReader.ReadSignedRationalArray(entry, _stream, byteOrder);
+                        return ConvertArrayToString(array);
+                    }
                 default:
                     return "Unknown Type";
             }
