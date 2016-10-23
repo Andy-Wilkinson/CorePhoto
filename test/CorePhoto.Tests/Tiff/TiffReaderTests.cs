@@ -3,6 +3,8 @@ using CorePhoto.Tiff;
 using CorePhoto.Tests.Helpers;
 using Xunit;
 using System;
+using CorePhoto.Numerics;
+using System.Linq;
 
 namespace CorePhoto.Tests.Tiff
 {
@@ -588,6 +590,176 @@ namespace CorePhoto.Tests.Tiff
             var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadString(entry, stream, byteOrder));
 
             Assert.Equal($"The retrieved string is not null terminated.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0, 0, 0, 0, 2, 0, 0, 0 }, 0, 2)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 1, 0, 0, 0, 2, 0, 0, 0 }, 1, 2)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 0, 0, 0, 0, 2 }, 0, 2)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1, 0, 0, 0, 2 }, 1, 2)]
+        public void ReadRational_ReturnsValue(ByteOrder byteOrder, byte[] data, uint expectedNumerator, uint expectedDenominator)
+        {
+            var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.Rational, data, 6, byteOrder);
+            var entry = entryTuple.Entry;
+            var stream = entryTuple.Stream;
+
+            var value = TiffReader.ReadRational(entry, stream, byteOrder);
+
+            Assert.Equal(expectedNumerator, value.Numerator);
+            Assert.Equal(expectedDenominator, value.Denominator);
+        }
+
+        [Theory]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0, 0, 0, 0, 2, 0, 0, 0 }, 0, 2)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 1, 0, 0, 0, 2, 0, 0, 0 }, 1, 2)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 255, 255, 255, 255, 2, 0, 0, 0 }, -1, 2)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 0, 0, 0, 0, 2 }, 0, 2)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1, 0, 0, 0, 2 }, 1, 2)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 255, 255, 255, 255, 0, 0, 0, 2 }, -1, 2)]
+        public void ReadSignedRational_ReturnsValue(ByteOrder byteOrder, byte[] data, int expectedNumerator, int expectedDenominator)
+        {
+            var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.SRational, data, 6, byteOrder);
+            var entry = entryTuple.Entry;
+            var stream = entryTuple.Stream;
+
+            var value = TiffReader.ReadSignedRational(entry, stream, byteOrder);
+
+            Assert.Equal(expectedNumerator, value.Numerator);
+            Assert.Equal(expectedDenominator, value.Denominator);
+        }
+
+        [Theory]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0, 0, 0, 0, 2, 0, 0, 0 }, new uint[] { 0 }, new uint[] { 2 })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 1, 0, 0, 0, 2, 0, 0, 0 }, new uint[] { 1 }, new uint[] { 2 })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 1, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0 }, new uint[] { 1, 2 }, new uint[] { 2, 3 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 0, 0, 0, 0, 2 }, new uint[] { 0 }, new uint[] { 2 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1, 0, 0, 0, 2 }, new uint[] { 1 }, new uint[] { 2 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 3 }, new uint[] { 1, 2 }, new uint[] { 2, 3 })]
+        public void ReadRationalArray_ReturnsValue(ByteOrder byteOrder, byte[] data, uint[] expectedNumerators, uint[] expectedDenominators)
+        {
+            var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.Rational, data, 6, byteOrder);
+            var entry = entryTuple.Entry;
+            var stream = entryTuple.Stream;
+
+            var value = TiffReader.ReadRationalArray(entry, stream, byteOrder);
+
+            var expectedValues = Enumerable.Range(0, expectedNumerators.Length).Select(i => new Rational(expectedNumerators[i], expectedDenominators[i])).ToArray();
+
+            Assert.Equal(expectedValues, value);
+        }
+
+        [Theory]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0, 0, 0, 0, 2, 0, 0, 0 }, new int[] { 0 }, new int[] { 2 })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 1, 0, 0, 0, 2, 0, 0, 0 }, new int[] { 1 }, new int[] { 2 })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 255, 255, 255, 255, 2, 0, 0, 0 }, new int[] { -1 }, new int[] { 2 })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 255, 255, 255, 255, 2, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0 }, new int[] { -1, 2 }, new int[] { 2, 3 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 0, 0, 0, 0, 2 }, new int[] { 0 }, new int[] { 2 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1, 0, 0, 0, 2 }, new int[] { 1 }, new int[] { 2 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 255, 255, 255, 255, 0, 0, 0, 2 }, new int[] { -1 }, new int[] { 2 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 255, 255, 255, 255, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 3 }, new int[] { -1, 2 }, new int[] { 2, 3 })]
+        public void ReadSignedRationalArray_ReturnsValue(ByteOrder byteOrder, byte[] data, int[] expectedNumerators, int[] expectedDenominators)
+        {
+            var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.SRational, data, 6, byteOrder);
+            var entry = entryTuple.Entry;
+            var stream = entryTuple.Stream;
+
+            var value = TiffReader.ReadSignedRationalArray(entry, stream, byteOrder);
+
+            var expectedValues = Enumerable.Range(0, expectedNumerators.Length).Select(i => new SignedRational(expectedNumerators[i], expectedDenominators[i])).ToArray();
+
+            Assert.Equal(expectedValues, value);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte)]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Short)]
+        [InlineDataAttribute(TiffType.Long)]
+        [InlineDataAttribute(TiffType.SByte)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SShort)]
+        [InlineDataAttribute(TiffType.SLong)]
+        [InlineDataAttribute(TiffType.SRational)]
+        [InlineDataAttribute(TiffType.Float)]
+        [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute((TiffType)99)]
+        public void ReadRational_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadRational(entry, stream, ByteOrder.LittleEndian));
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to a Rational.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte)]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Short)]
+        [InlineDataAttribute(TiffType.Long)]
+        [InlineDataAttribute(TiffType.SByte)]
+        [InlineDataAttribute(TiffType.Rational)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SShort)]
+        [InlineDataAttribute(TiffType.SLong)]
+        [InlineDataAttribute(TiffType.Float)]
+        [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute((TiffType)99)]
+        public void ReadSignedRational_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadSignedRational(entry, stream, ByteOrder.LittleEndian));
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to a SignedRational.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte)]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Short)]
+        [InlineDataAttribute(TiffType.Long)]
+        [InlineDataAttribute(TiffType.SByte)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SShort)]
+        [InlineDataAttribute(TiffType.SLong)]
+        [InlineDataAttribute(TiffType.SRational)]
+        [InlineDataAttribute(TiffType.Float)]
+        [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute((TiffType)99)]
+        public void ReadRationalArray_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadRationalArray(entry, stream, ByteOrder.LittleEndian));
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to a Rational.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte)]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Short)]
+        [InlineDataAttribute(TiffType.Long)]
+        [InlineDataAttribute(TiffType.Rational)]
+        [InlineDataAttribute(TiffType.SByte)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SShort)]
+        [InlineDataAttribute(TiffType.SLong)]
+        [InlineDataAttribute(TiffType.Float)]
+        [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute((TiffType)99)]
+        public void ReadSignedRationalArray_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadSignedRationalArray(entry, stream, ByteOrder.LittleEndian));
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to a SignedRational.", e.Message);
         }
     }
 }

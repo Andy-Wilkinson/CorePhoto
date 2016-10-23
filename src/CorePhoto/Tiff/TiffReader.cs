@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using CorePhoto.IO;
+using CorePhoto.Numerics;
 
 namespace CorePhoto.Tiff
 {
@@ -218,6 +219,48 @@ namespace CorePhoto.Tiff
                 throw new ImageFormatException("The retrieved string is not null terminated.");
 
             return Encoding.ASCII.GetString(data, 0, data.Length - 1);
+        }
+
+        public static Rational ReadRational(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            var array = ReadRationalArray(entry, stream, byteOrder);
+            return array[0];
+        }
+
+        public static SignedRational ReadSignedRational(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            var array = ReadSignedRationalArray(entry, stream, byteOrder);
+            return array[0];
+        }
+
+        public static Rational[] ReadRationalArray(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            if (entry.Type != TiffType.Rational)
+                throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to a Rational.");
+
+            byte[] data = ReadData(entry, stream, byteOrder);
+
+            return Enumerable.Range(0, entry.Count).Select(index =>
+                       {
+                           var numerator = DataConverter.ToUInt32(data, index * 8, byteOrder);
+                           var denominator = DataConverter.ToUInt32(data, index * 8 + 4, byteOrder);
+                           return new Rational(numerator, denominator);
+                       }).ToArray();
+        }
+
+        public static SignedRational[] ReadSignedRationalArray(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            if (entry.Type != TiffType.SRational)
+                throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to a SignedRational.");
+
+            byte[] data = ReadData(entry, stream, byteOrder);
+
+            return Enumerable.Range(0, entry.Count).Select(index =>
+                       {
+                           var numerator = DataConverter.ToInt32(data, index * 8, byteOrder);
+                           var denominator = DataConverter.ToInt32(data, index * 8 + 4, byteOrder);
+                           return new SignedRational(numerator, denominator);
+                       }).ToArray();
         }
     }
 }

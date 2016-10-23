@@ -10,7 +10,8 @@ namespace CorePhoto.Tests.Helpers
     {
         public static TiffIfdEntry_Stream_Tuple GenerateTiffIfdEntry(TiffType type, byte[] data, byte paddingByteCount, ByteOrder byteOrder)
         {
-            return GenerateTiffIfdEntry(type, data, paddingByteCount, byteOrder, data.Length);
+            var count = data.Length / TiffReader.SizeOfDataType(type);
+            return GenerateTiffIfdEntry(type, data, paddingByteCount, byteOrder, count);
         }
 
         public static TiffIfdEntry_Stream_Tuple GenerateTiffIfdEntry(TiffType type, byte[] data, byte paddingByteCount, ByteOrder byteOrder, int count)
