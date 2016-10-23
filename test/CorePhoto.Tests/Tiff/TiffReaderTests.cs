@@ -18,13 +18,13 @@ namespace CorePhoto.Tests.Tiff
             var stream = new StreamBuilder(ByteOrder.LittleEndian)
                                      .WriteBytes(0x49, 0x49)
                                      .WriteInt16(42)
-                                     .WriteInt32(123456)
+                                     .WriteUInt32(123456)
                                      .ToStream();
 
             var header = TiffReader.ReadHeader(stream);
 
             Assert.Equal(ByteOrder.LittleEndian, header.ByteOrder);
-            Assert.Equal(123456, header.FirstIfdOffset);
+            Assert.Equal(123456u, header.FirstIfdOffset);
         }
 
         [Fact]
@@ -33,13 +33,13 @@ namespace CorePhoto.Tests.Tiff
             var stream = new StreamBuilder(ByteOrder.BigEndian)
                                      .WriteBytes(0x4D, 0x4D)
                                      .WriteInt16(42)
-                                     .WriteInt32(123456)
+                                     .WriteUInt32(123456)
                                      .ToStream();
 
             var header = TiffReader.ReadHeader(stream);
 
             Assert.Equal(ByteOrder.BigEndian, header.ByteOrder);
-            Assert.Equal(123456, header.FirstIfdOffset);
+            Assert.Equal(123456u, header.FirstIfdOffset);
         }
 
         [Fact]
@@ -48,7 +48,7 @@ namespace CorePhoto.Tests.Tiff
             var stream = new StreamBuilder(ByteOrder.BigEndian)
                                      .WriteBytes(0xAB, 0x4D)
                                      .WriteInt16(42)
-                                     .WriteInt32(123456)
+                                     .WriteUInt32(123456)
                                      .ToStream();
 
             var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadHeader(stream));
@@ -62,7 +62,7 @@ namespace CorePhoto.Tests.Tiff
             var stream = new StreamBuilder(ByteOrder.BigEndian)
                                      .WriteBytes(0x4D, 0xAB)
                                      .WriteInt16(42)
-                                     .WriteInt32(123456)
+                                     .WriteUInt32(123456)
                                      .ToStream();
 
             var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadHeader(stream));
@@ -76,7 +76,7 @@ namespace CorePhoto.Tests.Tiff
             var stream = new StreamBuilder(ByteOrder.BigEndian)
                                      .WriteBytes(0x4D, 0x4D)
                                      .WriteInt16(123)
-                                     .WriteInt32(123456)
+                                     .WriteUInt32(123456)
                                      .ToStream();
 
             var e = Assert.Throws<ImageFormatException>(() => TiffReader.ReadHeader(stream));
@@ -94,7 +94,7 @@ namespace CorePhoto.Tests.Tiff
                                     .WriteTiffIfdEntry(2, TiffType.Ascii, 20, new byte[] { 1, 2, 3, 4 })
                                     .WriteTiffIfdEntry(4, TiffType.Short, 40, new byte[] { 2, 3, 4, 5 })
                                     .WriteTiffIfdEntry(6, TiffType.Double, 60, new byte[] { 3, 4, 5, 6 })
-                                    .WriteInt32(123456)
+                                    .WriteUInt32(123456)
                                     .ToStream();
 
             var ifd = TiffReader.ReadIfd(stream, byteOrder, 20);
@@ -103,7 +103,7 @@ namespace CorePhoto.Tests.Tiff
             AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
             AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, ifd.Entries[1]);
             AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, ifd.Entries[2]);
-            Assert.Equal(123456, ifd.NextIfdOffset);
+            Assert.Equal(123456u, ifd.NextIfdOffset);
         }
 
         [Theory]
@@ -113,7 +113,7 @@ namespace CorePhoto.Tests.Tiff
             var stream = new StreamBuilder(byteOrder)
                                     .WriteInt16(167)
                                     .WriteInt16(5)
-                                    .WriteInt32(123456)
+                                    .WriteUInt32(123456)
                                     .WriteBytes(new byte[] { 3, 4, 5, 6 })
                                     .ToStream();
 
@@ -135,7 +135,7 @@ namespace CorePhoto.Tests.Tiff
                                     .WriteTiffIfdEntry(2, TiffType.Ascii, 20, new byte[] { 1, 2, 3, 4 })
                                     .WriteTiffIfdEntry(4, TiffType.Short, 40, new byte[] { 2, 3, 4, 5 })
                                     .WriteTiffIfdEntry(6, TiffType.Double, 60, new byte[] { 3, 4, 5, 6 })
-                                    .WriteInt32(123456)
+                                    .WriteUInt32(123456)
                                     .ToStream();
 
             var header = new TiffHeader { FirstIfdOffset = 20 };
@@ -145,7 +145,7 @@ namespace CorePhoto.Tests.Tiff
             AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
             AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, ifd.Entries[1]);
             AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, ifd.Entries[2]);
-            Assert.Equal(123456, ifd.NextIfdOffset);
+            Assert.Equal(123456u, ifd.NextIfdOffset);
         }
 
         [Theory]
@@ -158,7 +158,7 @@ namespace CorePhoto.Tests.Tiff
                                     .WriteTiffIfdEntry(2, TiffType.Ascii, 20, new byte[] { 1, 2, 3, 4 })
                                     .WriteTiffIfdEntry(4, TiffType.Short, 40, new byte[] { 2, 3, 4, 5 })
                                     .WriteTiffIfdEntry(6, TiffType.Double, 60, new byte[] { 3, 4, 5, 6 })
-                                    .WriteInt32(123456)
+                                    .WriteUInt32(123456)
                                     .ToStream();
 
             var previousIfd = new TiffIfd { NextIfdOffset = 20 };
@@ -168,7 +168,7 @@ namespace CorePhoto.Tests.Tiff
             AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
             AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, ifd.Entries[1]);
             AssertTiff.Equal(new TiffIfdEntry { Tag = (TiffTag)6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, ifd.Entries[2]);
-            Assert.Equal(123456, ifd.NextIfdOffset);
+            Assert.Equal(123456u, ifd.NextIfdOffset);
         }
 
         [Theory]
@@ -180,7 +180,7 @@ namespace CorePhoto.Tests.Tiff
                                     .WriteTiffIfdEntry(2, TiffType.Ascii, 20, new byte[] { 1, 2, 3, 4 })
                                     .WriteTiffIfdEntry(4, TiffType.Short, 40, new byte[] { 2, 3, 4, 5 })
                                     .WriteTiffIfdEntry(6, TiffType.Double, 60, new byte[] { 3, 4, 5, 6 })
-                                    .WriteInt32(123456)
+                                    .WriteUInt32(123456)
                                     .ToStream();
 
             var previousIfd = new TiffIfd { NextIfdOffset = 00 };

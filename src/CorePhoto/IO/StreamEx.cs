@@ -30,10 +30,22 @@ namespace CorePhoto.IO
             return DataConverter.ToInt16(bytes, 0, byteOrder);
         }
 
+        public static UInt16 ReadUInt16(this Stream stream, ByteOrder byteOrder)
+        {
+            byte[] bytes = stream.ReadBytes(2);
+            return DataConverter.ToUInt16(bytes, 0, byteOrder);
+        }
+
         public static Int32 ReadInt32(this Stream stream, ByteOrder byteOrder)
         {
             byte[] bytes = stream.ReadBytes(4);
             return DataConverter.ToInt32(bytes, 0, byteOrder);
+        }
+
+        public static UInt32 ReadUInt32(this Stream stream, ByteOrder byteOrder)
+        {
+            byte[] bytes = stream.ReadBytes(4);
+            return DataConverter.ToUInt32(bytes, 0, byteOrder);
         }
     }
 }

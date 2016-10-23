@@ -12,7 +12,7 @@ namespace CorePhoto.Tiff
         {
             ByteOrder byteOrder = ReadHeader_ByteOrder(stream);
             int magicNumber = stream.ReadInt16(byteOrder);
-            int firstIfdOffset = stream.ReadInt32(byteOrder);
+            uint firstIfdOffset = stream.ReadUInt32(byteOrder);
 
             if (magicNumber != 42)
                 throw new ImageFormatException("The TIFF header does not contain the expected magic number.");
@@ -45,12 +45,12 @@ namespace CorePhoto.Tiff
                 entries[i] = ReadIfdEntry(stream, byteOrder);
             }
 
-            int nextIfdOffset = stream.ReadInt32(byteOrder);
+            uint nextIfdOffset = stream.ReadUInt32(byteOrder);
 
             return new TiffIfd { Entries = entries, NextIfdOffset = nextIfdOffset };
         }
 
-        public static TiffIfd ReadIfd(Stream stream, ByteOrder byteOrder, int offset)
+        public static TiffIfd ReadIfd(Stream stream, ByteOrder byteOrder, uint offset)
         {
             stream.Seek(offset, SeekOrigin.Begin);
             return ReadIfd(stream, byteOrder);
@@ -73,8 +73,8 @@ namespace CorePhoto.Tiff
 
         public static TiffIfdEntry ReadIfdEntry(Stream stream, ByteOrder byteOrder)
         {
-            TiffTag tag = (TiffTag)stream.ReadInt16(byteOrder);
-            TiffType type = (TiffType)stream.ReadInt16(byteOrder);
+            TiffTag tag = (TiffTag)stream.ReadUInt16(byteOrder);
+            TiffType type = (TiffType)stream.ReadUInt16(byteOrder);
             int count = stream.ReadInt32(byteOrder);
             byte[] value = stream.ReadBytes(4);
 
@@ -91,7 +91,7 @@ namespace CorePhoto.Tiff
             }
             else
             {
-                var dataOffset = DataConverter.ToInt32(entry.Value, 0, byteOrder);
+                var dataOffset = DataConverter.ToUInt32(entry.Value, 0, byteOrder);
                 stream.Seek(dataOffset, SeekOrigin.Begin);
                 return stream.ReadBytes(sizeOfData);
             }

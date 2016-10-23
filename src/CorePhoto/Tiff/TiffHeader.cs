@@ -5,6 +5,6 @@ namespace CorePhoto.Tiff
     public struct TiffHeader
     {
         public ByteOrder ByteOrder;
-        public int FirstIfdOffset;
+        public uint FirstIfdOffset;
     }
 }

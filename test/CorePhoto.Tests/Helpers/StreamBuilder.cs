@@ -52,6 +52,18 @@ namespace CorePhoto.Tests.Helpers
             return WriteBytesEndianOrder(bytes);
         }
 
+        public StreamBuilder WriteUInt16(UInt16 value)
+        {
+            byte[] bytes = BitConverter.GetBytes(value);
+            return WriteBytesEndianOrder(bytes);
+        }
+
+        public StreamBuilder WriteUInt32(UInt32 value)
+        {
+            byte[] bytes = BitConverter.GetBytes(value);
+            return WriteBytesEndianOrder(bytes);
+        }
+
         public StreamBuilder WriteBytesEndianOrder(params byte[] value)
         {
             if ((BitConverter.IsLittleEndian && ByteOrder == ByteOrder.BigEndian)
