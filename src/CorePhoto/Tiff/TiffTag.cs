@@ -1,10 +1,5 @@
 namespace CorePhoto.Tiff
 {
-    // TODO : TIFF-F (http://www.awaresystems.be/imaging/tiff/tifftags/extension.html)
-    // TODO : TIFF-FX (http://www.awaresystems.be/imaging/tiff/tifftags/extension.html)
-    // TODO : RFC 2301 (http://www.awaresystems.be/imaging/tiff/tifftags/extension.html)
-    // TODO : XMP (http://www.awaresystems.be/imaging/tiff/tifftags/extension.html)
-    // TODO : Private TIFF Tags (http://www.awaresystems.be/imaging/tiff/tifftags/private.html)
     // TODO : Private IFD Tags (http://www.awaresystems.be/imaging/tiff/tifftags/privateifd.html)
 
     public enum TiffTag
@@ -135,7 +130,6 @@ namespace CorePhoto.Tiff
         JPEGTables = 0x015B,
         CFARepeatPatternDim = 0x828D,
         BatteryLevel = 0x828F,
-        IptcNaa = 0x83BB,
         InterColorProfile = 0x8773,
         Interlace = 0x8829,
         TimeZoneOffset = 0x882A,
@@ -157,6 +151,22 @@ namespace CorePhoto.Tiff
         ExposureIndex = 0x9215,
         SensingMethod = 0x9216,
         CFAPattern = 0x828E,
+
+        // TIFF-F/FX Specification (http://www.ietf.org/rfc/rfc2301.txt)
+
+        BadFaxLines = 326,
+        CleanFaxData = 327,
+        ConsecutiveBadFaxLines = 328,
+        GlobalParametersIFD = 400,
+        ProfileType = 401,
+        FaxProfile = 402,
+        CodingMethod = 403,
+        VersionYear = 404,
+        ModeNumber = 405,
+        Decode = 433,
+        DefaultImageColor = 434,
+        StripRowCounts = 559,
+        ImageLayer = 34732,
 
         // DNG Specification: DNG Specific Tags
 
@@ -257,6 +267,47 @@ namespace CorePhoto.Tiff
         OriginalBestQualityFinalSize = 51090,
         OriginalDefaultCropSize = 51091,
         NewRawImageDigest = 51111,
-        RawToPreviewGain = 51112
+        RawToPreviewGain = 51112,
+
+        // Embedded Metadata
+
+        Xmp = 700,
+        Iptc = 33723,
+        Photoshop = 34377,
+        ExifIFD = 34665,
+        GpsIFD = 34853,
+        InteroperabilityIFD = 40965,
+
+        // Other Private TIFF tags (http://www.awaresystems.be/imaging/tiff/tifftags/private.html)
+
+        WangAnnotation = 32932,
+        MDFileTag = 33445,
+        MDScalePixel = 33446,
+        MDColorTable = 33447,
+        MDLabName = 33448,
+        MDSampleInfo = 33449,
+        MDPrepDate = 33450,
+        MDPrepTime = 33451,
+        MDFileUnits = 33452,
+        ModelPixelScaleTag = 33550,
+        IngrPacketDataTag = 33918,
+        IngrFlagRegisters = 33919,
+        IrasBTransformationMatrix = 33920,
+        ModelTiePointTag = 33922,
+        ModelTransformationTag = 34264,
+        IccProfile = 34675,
+        GeoKeyDirectoryTag = 34735,
+        GeoDoubleParamsTag = 34736,
+        GeoAsciiParamsTag = 34737,
+        HylaFAXFaxRecvParams = 34908,
+        HylaFAXFaxSubAddress = 34909,
+        HylaFAXFaxRecvTime = 34910,
+        GdalMetadata = 42112,
+        GdalNodata = 42113,
+        OceScanjobDescription = 50215,
+        OceApplicationSelector = 50216,
+        OceIdentificationNumber = 50217,
+        OceImageLogicCharacteristics = 50218,
+        AliasLayerMetadata = 50784
     }
 }
