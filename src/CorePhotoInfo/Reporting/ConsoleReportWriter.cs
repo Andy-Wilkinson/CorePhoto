@@ -4,7 +4,7 @@ namespace CorePhotoInfo.Reporting
 {
     public class ConsoleReportWriter : IReportWriter
     {
-
+        private static ConsoleColor ErrorColor = ConsoleColor.Red;
         private static ConsoleColor HeaderColor = ConsoleColor.DarkRed;
         private static ConsoleColor SubheaderColor = ConsoleColor.Yellow;
 
@@ -24,6 +24,14 @@ namespace CorePhotoInfo.Reporting
         {
             var str = string.Format(format, arg);
             Console.WriteLine(str);
+        }
+
+        public void WriteError(string format, params object[] arg)
+        {
+            var str = string.Format(format, arg);
+            Console.ForegroundColor = ErrorColor;
+            Console.WriteLine(str);
+            Console.ResetColor();
         }
 
         public void WriteHeader(string str, ConsoleColor color, char underlineChar)

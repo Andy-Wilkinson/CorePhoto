@@ -1,9 +1,12 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Reflection;
 using CorePhoto.IO;
 using CorePhoto.Tiff;
 using CorePhotoInfo.Reporting;
+using System.Collections.Generic;
+using CorePhoto.Dng;
 
 namespace CorePhotoInfo.Tiff
 {
@@ -11,6 +14,7 @@ namespace CorePhotoInfo.Tiff
     {
         private Stream _stream;
         private IReportWriter _report;
+        private Dictionary<int, string> _tagDictionary = new Dictionary<int, string>();
 
         private TiffDump(Stream stream, IReportWriter reportWriter)
         {
@@ -48,10 +52,11 @@ namespace CorePhotoInfo.Tiff
 
         private async Task WriteTiffIfdEntryInfoAsync(TiffIfdEntry entry, ByteOrder byteOrder)
         {
+            var tagStr = ConvertTagToString(_tagDictionary, entry.Tag);
             var typeStr = entry.Count == 1 ? $"{entry.Type}" : $"{entry.Type}[{entry.Count}]";
             string value = await GetTiffIfdEntryDataAsync(entry, byteOrder);
 
-            _report.WriteLine($"{entry.Tag} ({typeStr}) = {value}");
+            _report.WriteLine($"{tagStr} ({typeStr}) = {value}");
         }
 
         private async Task<string> GetTiffIfdEntryDataAsync(TiffIfdEntry entry, ByteOrder byteOrder)
@@ -111,9 +116,39 @@ namespace CorePhotoInfo.Tiff
             return $"[{arrayString}{continuationString}]";
         }
 
+        private string ConvertTagToString(Dictionary<int, string> dictionary, int tag)
+        {
+            string str;
+
+            if (dictionary.TryGetValue(tag, out str))
+                return str;
+            else
+                return $"UNKNOWN {tag}";
+        }
+
+        private void PopulateTagDictionary<T>(Dictionary<int, string> dictionary)
+        {
+            TypeInfo type = typeof(T).GetTypeInfo();
+
+            foreach (var field in type.GetFields())
+            {
+                var name = field.Name;
+                var value = (int)field.GetRawConstantValue();
+
+                if (dictionary.ContainsKey(value))
+                    _report.WriteError("CorePhotoInfo ERROR - Tag defined multiple times '{0}'", value);
+                else
+                    dictionary.Add(value, name);
+            }
+        }
+
         public static void WriteTiffInfo(Stream stream, IReportWriter reportWriter)
         {
             TiffDump instance = new TiffDump(stream, reportWriter);
+
+            instance.PopulateTagDictionary<TiffTags>(instance._tagDictionary);
+            instance.PopulateTagDictionary<DngTags>(instance._tagDictionary);
+
             instance.WriteTiffInfoAsync().Wait();
         }
     }

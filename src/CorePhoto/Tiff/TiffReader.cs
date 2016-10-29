@@ -83,7 +83,7 @@ namespace CorePhoto.Tiff
 
         public static TiffIfdEntry ParseIfdEntry(byte[] bytes, int offset, ByteOrder byteOrder)
         {
-            TiffTag tag = (TiffTag)DataConverter.ToUInt16(bytes, offset + 0, byteOrder);
+            ushort tag = DataConverter.ToUInt16(bytes, offset + 0, byteOrder);
             TiffType type = (TiffType)DataConverter.ToUInt16(bytes, offset + 2, byteOrder);
             int count = DataConverter.ToInt32(bytes, offset + 4, byteOrder);
             byte[] value = DataConverter.ToBytes(bytes, offset + 8, 4);
