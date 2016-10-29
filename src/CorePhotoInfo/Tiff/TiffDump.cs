@@ -29,20 +29,54 @@ namespace CorePhotoInfo.Tiff
             _report.WriteSubheader("TiffHeader");
             _report.WriteLine("Byte order       : {0}", header.ByteOrder);
 
-            TiffIfd? ifd = await TiffReader.ReadFirstIfdAsync(header, _stream, header.ByteOrder);
-            int ifdId = 0;
-
-            while (ifd != null)
-            {
-                _report.WriteSubheader("IFD {0}", ifdId);
-                await WriteTiffIfdInfoAsync(ifd.Value, header.ByteOrder);
-
-                ifd = await TiffReader.ReadNextIfdAsync(ifd.Value, _stream, header.ByteOrder);
-                ifdId++;
-            }
+            TiffIfd ifd = await TiffReader.ReadFirstIfdAsync(header, _stream, header.ByteOrder);
+            await WriteTiffIfdInfoAsync(ifd, header.ByteOrder, "IFD ", 0);
         }
 
-        private async Task WriteTiffIfdInfoAsync(TiffIfd ifd, ByteOrder byteOrder)
+        private async Task WriteTiffIfdInfoAsync(TiffIfd ifd, ByteOrder byteOrder, string ifdPrefix, int? ifdId)
+        {
+            _report.WriteSubheader($"{ifdPrefix}{ifdId}");
+
+            await WriteTiffIfdEntriesAsync(ifd, byteOrder);
+
+            // Write the EXIF IFD
+
+            var exifIfdEntry = ifd.Entries.FirstOrDefault(e => e.Tag == TiffTags.ExifIFD);
+
+            if (exifIfdEntry.Tag != 0)
+            {
+                uint[] subIfdOffsets = await TiffReader.ReadIntegerArrayAsync(exifIfdEntry, _stream, byteOrder);
+
+                for (int i = 0; i < subIfdOffsets.Length; i++)
+                {
+                    TiffIfd subIfd = await TiffReader.ReadIfdAsync(_stream, byteOrder, subIfdOffsets[i]);
+                    await WriteTiffIfdInfoAsync(subIfd, byteOrder, $"{ifdPrefix}{ifdId} (EXIF)", null);
+                }
+            }
+
+            // Write the sub-IFDs
+
+            var subIfdEntry = ifd.Entries.FirstOrDefault(e => e.Tag == TiffTags.SubIFDs);
+
+            if (subIfdEntry.Tag != 0)
+            {
+                uint[] subIfdOffsets = await TiffReader.ReadIntegerArrayAsync(subIfdEntry, _stream, byteOrder);
+
+                for (int i = 0; i < subIfdOffsets.Length; i++)
+                {
+                    TiffIfd subIfd = await TiffReader.ReadIfdAsync(_stream, byteOrder, subIfdOffsets[i]);
+                    await WriteTiffIfdInfoAsync(subIfd, byteOrder, $"{ifdPrefix}{ifdId}-", i);
+                }
+            }
+
+            // Write the next IFD
+
+            TiffIfd? nextIfd = await TiffReader.ReadNextIfdAsync(ifd, _stream, byteOrder);
+            if (nextIfd != null)
+                await WriteTiffIfdInfoAsync(nextIfd.Value, byteOrder, ifdPrefix, ifdId + 1);
+        }
+
+        private async Task WriteTiffIfdEntriesAsync(TiffIfd ifd, ByteOrder byteOrder)
         {
             foreach (TiffIfdEntry entry in ifd.Entries)
             {
