@@ -39,7 +39,11 @@ namespace CorePhotoInfo.Tiff
         {
             _report.WriteSubheader($"{ifdPrefix}{ifdId}");
 
+            // Write the IFD dump
+
             await WriteTiffIfdEntriesAsync(ifd, byteOrder, tagDictionary);
+            _report.WriteLine("");
+            await WriteTiffImageInformationAsync(ifd, byteOrder);
 
             // Write the EXIF IFD
 
@@ -146,6 +150,11 @@ namespace CorePhotoInfo.Tiff
                 default:
                     return "Unknown Type";
             }
+        }
+
+        private async Task WriteTiffImageInformationAsync(TiffIfd ifd, ByteOrder byteOrder)
+        {
+            _report.WriteLine("Image compression: {0}", ifd.GetCompression(byteOrder));
         }
 
         private string ConvertArrayToString<T>(T[] array)
