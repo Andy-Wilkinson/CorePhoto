@@ -8,7 +8,6 @@ using CorePhoto.Tiff;
 using CorePhotoInfo.Reporting;
 using System.Collections.Generic;
 using CorePhoto.Dng;
-using CorePhoto.Metadata.Exif;
 
 namespace CorePhotoInfo.Tiff
 {
@@ -44,18 +43,21 @@ namespace CorePhotoInfo.Tiff
 
             // Write the EXIF IFD
 
-            var exifIfd = await ExifReader.ReadExifIfdAsync(ifd, _stream, byteOrder);
+            var exifIfdReference = ExifReader.GetExifIfdReference(ifd, byteOrder);
 
-            if (exifIfd != null)
-                await WriteTiffIfdInfoAsync(exifIfd.Value, byteOrder, $"{ifdPrefix}{ifdId} (EXIF)", null, _exifTagDictionary);
+            if (exifIfdReference != null)
+            {
+                var exifIfd = await TiffReader.ReadIfdAsync(exifIfdReference.Value, _stream, byteOrder);
+                await WriteTiffIfdInfoAsync(exifIfd, byteOrder, $"{ifdPrefix}{ifdId} (EXIF)", null, _exifTagDictionary);
+            }
 
             // Write the sub-IFDs
 
-            var subIfdCount = TiffReader.CountSubIfds(ifd);
+            var subIfdReferences = await TiffReader.ReadSubIfdReferencesAsync(ifd, _stream, byteOrder);
 
-            for (int i = 0; i < subIfdCount; i++)
+            for (int i = 0; i < subIfdReferences.Length; i++)
             {
-                TiffIfd subIfd = await TiffReader.ReadSubIfdAsync(ifd, i, _stream, byteOrder);
+                TiffIfd subIfd = await TiffReader.ReadIfdAsync(subIfdReferences[i], _stream, byteOrder);
                 await WriteTiffIfdInfoAsync(subIfd, byteOrder, $"{ifdPrefix}{ifdId}-", i, _tagDictionary);
             }
 

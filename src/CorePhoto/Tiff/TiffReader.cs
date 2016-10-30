@@ -19,12 +19,12 @@ namespace CorePhoto.Tiff
 
             ByteOrder byteOrder = ReadHeader_ByteOrder(bytes);
             int magicNumber = DataConverter.ToInt16(bytes, 2, byteOrder);
-            uint firstIfdOffset = DataConverter.ToUInt32(bytes, 4, byteOrder);
+            TiffIfdReference firstIfdReference = new TiffIfdReference(DataConverter.ToUInt32(bytes, 4, byteOrder));
 
             if (magicNumber != 42)
                 throw new ImageFormatException("The TIFF header does not contain the expected magic number.");
 
-            return new TiffHeader { ByteOrder = byteOrder, FirstIfdOffset = firstIfdOffset };
+            return new TiffHeader { ByteOrder = byteOrder, FirstIfdReference = firstIfdReference };
         }
 
         private static ByteOrder ReadHeader_ByteOrder(byte[] bytes)
@@ -54,42 +54,40 @@ namespace CorePhoto.Tiff
                 entries[i] = ParseIfdEntry(bytes, i * SIZEOF_IFDENTRY, byteOrder);
             }
 
-            uint nextIfdOffset = await stream.ReadUInt32Async(byteOrder);
+            var nextIfdOffset = await stream.ReadUInt32Async(byteOrder);
+            var nextIfdReference = nextIfdOffset != 0 ? new TiffIfdReference(nextIfdOffset) : (TiffIfdReference?)null;
 
-            return new TiffIfd { Entries = entries, NextIfdOffset = nextIfdOffset };
+            return new TiffIfd { Entries = entries, NextIfdReference = nextIfdReference };
         }
 
-        public static Task<TiffIfd> ReadIfdAsync(Stream stream, ByteOrder byteOrder, uint offset)
+        public static Task<TiffIfd> ReadIfdAsync(TiffIfdReference ifdReference, Stream stream, ByteOrder byteOrder)
         {
-            stream.Seek(offset, SeekOrigin.Begin);
+            stream.Seek(ifdReference.Offset, SeekOrigin.Begin);
             return ReadIfdAsync(stream, byteOrder);
         }
 
         public static Task<TiffIfd> ReadFirstIfdAsync(TiffHeader header, Stream stream, ByteOrder byteOrder)
         {
-            var offset = header.FirstIfdOffset;
-            return ReadIfdAsync(stream, byteOrder, offset);
+            return ReadIfdAsync(header.FirstIfdReference, stream, byteOrder);
         }
 
         public static async Task<TiffIfd?> ReadNextIfdAsync(TiffIfd ifd, Stream stream, ByteOrder byteOrder)
         {
-            if (ifd.NextIfdOffset == 0)
+            if (ifd.NextIfdReference == null)
                 return null;
 
-            var offset = ifd.NextIfdOffset;
-            var nextIfd = await ReadIfdAsync(stream, byteOrder, offset);
+            var nextIfd = await ReadIfdAsync(ifd.NextIfdReference.Value, stream, byteOrder);
             return nextIfd;
         }
 
-        public static async Task<TiffIfd> ReadSubIfdAsync(TiffIfd ifd, int index, Stream stream, ByteOrder byteOrder)
+        public static async Task<TiffIfdReference[]> ReadSubIfdReferencesAsync(TiffIfd ifd, Stream stream, ByteOrder byteOrder)
         {
             var subIfdsEntry = TiffReader.GetTiffIfdEntry(ifd, TiffTags.SubIFDs);
 
-            if (subIfdsEntry == null)
-                throw new NotImplementedException();
-
-            var offsets = await TiffReader.ReadIfdOffsetArrayAsync(subIfdsEntry.Value, stream, byteOrder);
-            return await TiffReader.ReadIfdAsync(stream, byteOrder, offsets[index]);
+            if (subIfdsEntry != null)
+                return await TiffReader.ReadIfdReferenceArrayAsync(subIfdsEntry.Value, stream, byteOrder);
+            else
+                return Array.Empty<TiffIfdReference>();
         }
 
         public static TiffIfdEntry ParseIfdEntry(byte[] bytes, int offset, ByteOrder byteOrder)
@@ -152,12 +150,6 @@ namespace CorePhoto.Tiff
 
         public static int SizeOfData(TiffIfdEntry entry) => SizeOfDataType(entry.Type) * entry.Count;
 
-        public static int CountSubIfds(TiffIfd ifd)
-        {
-            var subIfdsEntry = GetTiffIfdEntry(ifd, TiffTags.SubIFDs);
-            return subIfdsEntry == null ? 0 : subIfdsEntry.Value.Count;
-        }
-
         public static TiffIfdEntry? GetTiffIfdEntry(TiffIfd ifd, ushort tag)
         {
             var entry = ifd.Entries.FirstOrDefault<TiffIfdEntry>(e => e.Tag == tag);
@@ -200,15 +192,15 @@ namespace CorePhoto.Tiff
             }
         }
 
-        public static uint GetIfdOffset(TiffIfdEntry entry, ByteOrder byteOrder)
+        public static TiffIfdReference GetIfdReference(TiffIfdEntry entry, ByteOrder byteOrder)
         {
             if (entry.Count != 1)
                 throw new ImageFormatException("Cannot read a single value from an array of multiple items.");
 
             if (entry.Type != TiffType.Long && entry.Type != TiffType.Ifd)
-                throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to an IFD offset.");
+                throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to an IFD reference.");
 
-            return DataConverter.ToUInt32(entry.Value, 0, byteOrder);
+            return new TiffIfdReference(DataConverter.ToUInt32(entry.Value, 0, byteOrder));
         }
 
         public static Task<uint[]> ReadIntegerArrayAsync(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
@@ -217,16 +209,6 @@ namespace CorePhoto.Tiff
 
             if (type != TiffType.Byte && type != TiffType.Short && type != TiffType.Long)
                 throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to an unsigned integer.");
-
-            return ReadIntegerArrayAsync_Internal(entry, stream, byteOrder);
-        }
-
-        public static Task<uint[]> ReadIfdOffsetArrayAsync(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
-        {
-            var type = entry.Type;
-
-            if (type != TiffType.Long && type != TiffType.Ifd)
-                throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to an IFD offset.");
 
             return ReadIntegerArrayAsync_Internal(entry, stream, byteOrder);
         }
@@ -384,6 +366,22 @@ namespace CorePhoto.Tiff
                            var denominator = DataConverter.ToInt32(data, index * 8 + 4, byteOrder);
                            return new SignedRational(numerator, denominator);
                        }).ToArray();
+        }
+
+        public static Task<TiffIfdReference[]> ReadIfdReferenceArrayAsync(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            var type = entry.Type;
+
+            if (type != TiffType.Long && type != TiffType.Ifd)
+                throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to an IFD reference.");
+
+            return ReadIfdReferenceArrayAsync_Internal(entry, stream, byteOrder); ;
+        }
+
+        private static async Task<TiffIfdReference[]> ReadIfdReferenceArrayAsync_Internal(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            byte[] data = await ReadDataAsync(entry, stream, byteOrder);
+            return Enumerable.Range(0, entry.Count).Select(index => new TiffIfdReference(DataConverter.ToUInt32(data, index * 4, byteOrder))).ToArray();
         }
     }
 }

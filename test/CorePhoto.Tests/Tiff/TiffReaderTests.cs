@@ -25,7 +25,7 @@ namespace CorePhoto.Tests.Tiff
             var header = await TiffReader.ReadHeaderAsync(stream);
 
             Assert.Equal(ByteOrder.LittleEndian, header.ByteOrder);
-            Assert.Equal(123456u, header.FirstIfdOffset);
+            Assert.Equal(new TiffIfdReference(123456), header.FirstIfdReference);
         }
 
         [Fact]
@@ -40,7 +40,7 @@ namespace CorePhoto.Tests.Tiff
             var header = await TiffReader.ReadHeaderAsync(stream);
 
             Assert.Equal(ByteOrder.BigEndian, header.ByteOrder);
-            Assert.Equal(123456u, header.FirstIfdOffset);
+            Assert.Equal(new TiffIfdReference(123456), header.FirstIfdReference);
         }
 
         [Fact]
@@ -87,7 +87,7 @@ namespace CorePhoto.Tests.Tiff
 
         [Theory]
         [MemberDataAttribute(nameof(ByteOrderValues))]
-        public async Task ReadIfdAsync_ReadsCorrectlyWithOffset(ByteOrder byteOrder)
+        public async Task ReadIfdAsync_ReadsCorrectlyWithReference(ByteOrder byteOrder)
         {
             var stream = new StreamBuilder(byteOrder)
                                     .WritePadding(20)
@@ -98,13 +98,14 @@ namespace CorePhoto.Tests.Tiff
                                     .WriteUInt32(123456)
                                     .ToStream();
 
-            var ifd = await TiffReader.ReadIfdAsync(stream, byteOrder, 20);
+            var ifdReference = new TiffIfdReference(20);
+            var ifd = await TiffReader.ReadIfdAsync(ifdReference, stream, byteOrder);
 
             Assert.Equal(3, ifd.Entries.Length);
             AssertTiff.Equal(new TiffIfdEntry { Tag = 2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
             AssertTiff.Equal(new TiffIfdEntry { Tag = 4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, ifd.Entries[1]);
             AssertTiff.Equal(new TiffIfdEntry { Tag = 6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, ifd.Entries[2]);
-            Assert.Equal(123456u, ifd.NextIfdOffset);
+            Assert.Equal(new TiffIfdReference(123456), ifd.NextIfdReference);
         }
 
         [Theory]
@@ -184,14 +185,14 @@ namespace CorePhoto.Tests.Tiff
                                     .WriteUInt32(123456)
                                     .ToStream();
 
-            var header = new TiffHeader { FirstIfdOffset = 20 };
+            var header = new TiffHeader { FirstIfdReference = new TiffIfdReference(20) };
             var ifd = await TiffReader.ReadFirstIfdAsync(header, stream, byteOrder);
 
             Assert.Equal(3, ifd.Entries.Length);
             AssertTiff.Equal(new TiffIfdEntry { Tag = 2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
             AssertTiff.Equal(new TiffIfdEntry { Tag = 4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, ifd.Entries[1]);
             AssertTiff.Equal(new TiffIfdEntry { Tag = 6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, ifd.Entries[2]);
-            Assert.Equal(123456u, ifd.NextIfdOffset);
+            Assert.Equal(new TiffIfdReference(123456), ifd.NextIfdReference);
         }
 
         [Theory]
@@ -207,14 +208,14 @@ namespace CorePhoto.Tests.Tiff
                                     .WriteUInt32(123456)
                                     .ToStream();
 
-            var previousIfd = new TiffIfd { NextIfdOffset = 20 };
+            var previousIfd = new TiffIfd { NextIfdReference = new TiffIfdReference(20) };
             var ifd = (await TiffReader.ReadNextIfdAsync(previousIfd, stream, byteOrder)).Value;
 
             Assert.Equal(3, ifd.Entries.Length);
             AssertTiff.Equal(new TiffIfdEntry { Tag = 2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, ifd.Entries[0]);
             AssertTiff.Equal(new TiffIfdEntry { Tag = 4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, ifd.Entries[1]);
             AssertTiff.Equal(new TiffIfdEntry { Tag = 6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, ifd.Entries[2]);
-            Assert.Equal(123456u, ifd.NextIfdOffset);
+            Assert.Equal(new TiffIfdReference(123456), ifd.NextIfdReference);
         }
 
         [Theory]
@@ -229,7 +230,7 @@ namespace CorePhoto.Tests.Tiff
                                     .WriteUInt32(123456)
                                     .ToStream();
 
-            var previousIfd = new TiffIfd { NextIfdOffset = 00 };
+            var previousIfd = new TiffIfd { NextIfdReference = null };
             var ifd = await TiffReader.ReadNextIfdAsync(previousIfd, stream, byteOrder);
 
             Assert.Null(ifd);
@@ -240,19 +241,13 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(ByteOrder.LittleEndian, TiffType.Ifd)]
         [InlineDataAttribute(ByteOrder.BigEndian, TiffType.Long)]
         [InlineDataAttribute(ByteOrder.BigEndian, TiffType.Ifd)]
-        public async Task ReadSubIfdAsync_ReadsCorrectly(ByteOrder byteOrder, TiffType type)
+        public async Task ReadSubIfdReferencesAsync_ReadsCorrectly(ByteOrder byteOrder, TiffType type)
         {
             var stream = new StreamBuilder(byteOrder)
-                                    .WritePadding(10)
+                                    .WritePadding(20)
                                     .WriteUInt32(10)
                                     .WriteUInt32(42)
                                     .WriteUInt32(30)
-                                    .WritePadding(20)
-                                    .WriteInt16(3)
-                                    .WriteTiffIfdEntry(2, TiffType.Ascii, 20, new byte[] { 1, 2, 3, 4 })
-                                    .WriteTiffIfdEntry(4, TiffType.Short, 40, new byte[] { 2, 3, 4, 5 })
-                                    .WriteTiffIfdEntry(6, TiffType.Double, 60, new byte[] { 3, 4, 5, 6 })
-                                    .WriteUInt32(123456)
                                     .ToStream();
 
             var tiffIfd = new TiffIfd
@@ -260,18 +255,35 @@ namespace CorePhoto.Tests.Tiff
                 Entries = new[]
                 {
                     new TiffIfdEntry { Tag = 10, Type = TiffType.Ascii, Count = 10},
-                    new TiffIfdEntry { Tag = TiffTags.SubIFDs, Type = type, Count = 3, Value = ByteArrayHelper.ToBytes(10u, byteOrder) },
+                    new TiffIfdEntry { Tag = TiffTags.SubIFDs, Type = type, Count = 3, Value = ByteArrayHelper.ToBytes(20u, byteOrder) },
                     new TiffIfdEntry { Tag = 20, Type = TiffType.Ascii, Count = 10}
                 }
             };
 
-            var subIfd = (await TiffReader.ReadSubIfdAsync(tiffIfd, 1, stream, byteOrder));
+            var subIfdReferences = await TiffReader.ReadSubIfdReferencesAsync(tiffIfd, stream, byteOrder);
 
-            Assert.Equal(3, subIfd.Entries.Length);
-            AssertTiff.Equal(new TiffIfdEntry { Tag = 2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, subIfd.Entries[0]);
-            AssertTiff.Equal(new TiffIfdEntry { Tag = 4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, subIfd.Entries[1]);
-            AssertTiff.Equal(new TiffIfdEntry { Tag = 6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, subIfd.Entries[2]);
-            Assert.Equal(123456u, subIfd.NextIfdOffset);
+            Assert.Equal(new[] { new TiffIfdReference(10), new TiffIfdReference(42), new TiffIfdReference(30) }, subIfdReferences);
+        }
+
+        [Theory]
+        [MemberDataAttribute(nameof(ByteOrderValues))]
+        public async Task ReadSubIfdReferencesAsync_ReadsCorrectly(ByteOrder byteOrder)
+        {
+            var stream = new StreamBuilder(byteOrder).ToStream();
+
+            var tiffIfd = new TiffIfd
+            {
+                Entries = new[]
+                {
+                    new TiffIfdEntry { Tag = 10, Type = TiffType.Ascii, Count = 10},
+                    new TiffIfdEntry { Tag = 15, Type = TiffType.Ascii, Count = 10},
+                    new TiffIfdEntry { Tag = 20, Type = TiffType.Ascii, Count = 10}
+                }
+            };
+
+            var subIfdReferences = await TiffReader.ReadSubIfdReferencesAsync(tiffIfd, stream, byteOrder);
+
+            Assert.Equal(new TiffIfdReference[] { }, subIfdReferences);
         }
 
         [Theory]
@@ -397,44 +409,6 @@ namespace CorePhoto.Tests.Tiff
             var size = TiffReader.SizeOfData(entry);
 
             Assert.Equal(expectedSize, size);
-        }
-
-        [Theory]
-        [InlineDataAttribute(TiffType.Long)]
-        [InlineDataAttribute(TiffType.Ifd)]
-        public void CountSubIfds_ReturnsCount(TiffType type)
-        {
-            var ifd = new TiffIfd
-            {
-                Entries = new[]
-                {
-                    new TiffIfdEntry { Tag = 10, Type = TiffType.Long, Count = 5},
-                    new TiffIfdEntry { Tag = TiffTags.SubIFDs, Type = type, Count = 10},
-                    new TiffIfdEntry { Tag = 20, Type = TiffType.Byte, Count = 15}
-                }
-            };
-
-            var count = TiffReader.CountSubIfds(ifd);
-
-            Assert.Equal(10, count);
-        }
-
-        [Fact]
-        public void CountSubIfds_ReturnsZeroIfNoSubIfds()
-        {
-            var ifd = new TiffIfd
-            {
-                Entries = new[]
-                {
-                    new TiffIfdEntry { Tag = 10, Type = TiffType.Long, Count = 5},
-                    new TiffIfdEntry { Tag = 15, Type = TiffType.Ascii, Count = 10},
-                    new TiffIfdEntry { Tag = 20, Type = TiffType.Byte, Count = 15}
-                }
-            };
-
-            var count = TiffReader.CountSubIfds(ifd);
-
-            Assert.Equal(0, count);
         }
 
         [Fact]
@@ -658,13 +632,13 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Ifd, ByteOrder.BigEndian, new byte[] { 1, 0, 0, 0 }, 256 * 256 * 256)]
         [InlineDataAttribute(TiffType.Ifd, ByteOrder.BigEndian, new byte[] { 4, 3, 2, 1 }, 67305985)]
         [InlineDataAttribute(TiffType.Ifd, ByteOrder.BigEndian, new byte[] { 255, 255, 255, 255 }, UInt32.MaxValue)]
-        public void GetIfdOffset_ReturnsValue(TiffType type, ByteOrder byteOrder, byte[] data, uint expectedValue)
+        public void GetIfdReference_ReturnsValue(TiffType type, ByteOrder byteOrder, byte[] data, uint expectedOffset)
         {
             var entry = new TiffIfdEntry { Type = type, Count = 1, Value = data };
 
-            var value = TiffReader.GetIfdOffset(entry, byteOrder);
+            var value = TiffReader.GetIfdReference(entry, byteOrder);
 
-            Assert.Equal(expectedValue, value);
+            Assert.Equal(new TiffIfdReference(expectedOffset), value);
         }
 
         [Theory]
@@ -680,13 +654,13 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
         [InlineDataAttribute((TiffType)99)]
-        public void GetIfdOffset_ThrowsExceptionIfInvalidType(TiffType type)
+        public void GetIfdReference_ThrowsExceptionIfInvalidType(TiffType type)
         {
             var entry = new TiffIfdEntry { Type = type, Count = 1 };
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.GetIfdOffset(entry, ByteOrder.LittleEndian));
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.GetIfdReference(entry, ByteOrder.LittleEndian));
 
-            Assert.Equal($"A value of type '{type}' cannot be converted to an IFD offset.", e.Message);
+            Assert.Equal($"A value of type '{type}' cannot be converted to an IFD reference.", e.Message);
         }
 
         [Theory]
@@ -694,11 +668,11 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian)]
         [InlineDataAttribute(TiffType.Ifd, ByteOrder.LittleEndian)]
         [InlineDataAttribute(TiffType.Ifd, ByteOrder.BigEndian)]
-        public void GetIfdOffset_ThrowsExceptionIfCountIsNotOne(TiffType type, ByteOrder byteOrder)
+        public void GetIfdReference_ThrowsExceptionIfCountIsNotOne(TiffType type, ByteOrder byteOrder)
         {
             var entry = new TiffIfdEntry { Type = type, Count = 2 };
 
-            var e = Assert.Throws<ImageFormatException>(() => TiffReader.GetIfdOffset(entry, byteOrder));
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.GetIfdReference(entry, byteOrder));
 
             Assert.Equal($"Cannot read a single value from an array of multiple items.", e.Message);
         }
@@ -1074,14 +1048,15 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Ifd, 2, ByteOrder.LittleEndian, new byte[] { 4, 3, 2, 1, 6, 5, 4, 3, 99, 99 }, new uint[] { 0x01020304, 0x03040506 })]
         [InlineDataAttribute(TiffType.Ifd, 1, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, new uint[] { 0x01020304 })]
         [InlineDataAttribute(TiffType.Ifd, 2, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4, 3, 4, 5, 6, 99, 99 }, new uint[] { 0x01020304, 0x03040506 })]
-        public async Task ReadIfdOffsetArrayAsync_ReturnsValue(TiffType type, int count, ByteOrder byteOrder, byte[] data, uint[] expectedValue)
+        public async Task ReadIfdReferenceArrayAsync_ReturnsValue(TiffType type, int count, ByteOrder byteOrder, byte[] data, uint[] expectedOffsets)
         {
             var entryTuple = TiffHelper.GenerateTiffIfdEntry(type, data, 6, byteOrder, count);
             var entry = entryTuple.Entry;
             var stream = entryTuple.Stream;
 
-            var value = await TiffReader.ReadIfdOffsetArrayAsync(entry, stream, byteOrder);
+            var value = await TiffReader.ReadIfdReferenceArrayAsync(entry, stream, byteOrder);
 
+            var expectedValue = expectedOffsets.Select(offset => new TiffIfdReference(offset));
             Assert.Equal(expectedValue, value);
         }
 
@@ -1098,14 +1073,14 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
         [InlineDataAttribute((TiffType)99)]
-        public void ReadIfdOffsetArrayAsync_ThrowsExceptionIfInvalidType(TiffType type)
+        public void ReadIfdReferenceArrayAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
             var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
             var entry = new TiffIfdEntry { Type = type, Count = 10 };
 
-            var e = Assert.Throws<ImageFormatException>(() => { TiffReader.ReadIfdOffsetArrayAsync(entry, stream, ByteOrder.LittleEndian); });
+            var e = Assert.Throws<ImageFormatException>(() => { TiffReader.ReadIfdReferenceArrayAsync(entry, stream, ByteOrder.LittleEndian); });
 
-            Assert.Equal($"A value of type '{type}' cannot be converted to an IFD offset.", e.Message);
+            Assert.Equal($"A value of type '{type}' cannot be converted to an IFD reference.", e.Message);
         }
     }
 }
