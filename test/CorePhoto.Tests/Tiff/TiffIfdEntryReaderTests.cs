@@ -673,6 +673,234 @@ namespace CorePhoto.Tests.Tiff
         }
 
         [Theory]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x00, 0x00, 0x00, 0x00 }, 0.0F)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x3F, 0x80, 0x00, 0x00 }, 1.0F)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0xC0, 0x00, 0x00, 0x00 }, -2.0F)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x7F, 0x7F, 0xFF, 0xFF }, float.MaxValue)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x7F, 0x80, 0x00, 0x00 }, float.PositiveInfinity)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0xFF, 0x80, 0x00, 0x00 }, float.NegativeInfinity)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00 }, 0.0F)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x80, 0x3F }, 1.0F)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0xC0 }, -2.0F)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0xFF, 0xFF, 0x7F, 0x7F }, float.MaxValue)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x80, 0x7F }, float.PositiveInfinity)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x80, 0xFF }, float.NegativeInfinity)]
+
+        public async Task ReadFloatAsync_ReturnsValue(ByteOrder byteOrder, byte[] data, float expectedValue)
+        {
+            var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.Float, data, 6, byteOrder);
+            var entry = entryTuple.Entry;
+            var stream = entryTuple.Stream;
+
+            var value = await entry.ReadFloatAsync(stream, byteOrder);
+
+            Assert.Equal(expectedValue, value);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte)]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Short)]
+        [InlineDataAttribute(TiffType.Long)]
+        [InlineDataAttribute(TiffType.Rational)]
+        [InlineDataAttribute(TiffType.SByte)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SShort)]
+        [InlineDataAttribute(TiffType.SLong)]
+        [InlineDataAttribute(TiffType.SRational)]
+        [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute(TiffType.Ifd)]
+        [InlineDataAttribute((TiffType)99)]
+        public void ReadFloatAsync_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+
+            var e = Assert.Throws<ImageFormatException>(() => { entry.ReadFloatAsync(stream, ByteOrder.LittleEndian); });
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to a float.", e.Message);
+        }
+
+        [Fact]
+        public void ReadFloatAsync_ThrowsExceptionIfCountIsNotOne()
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = TiffType.Float, Count = 2 };
+
+            var e = Assert.Throws<ImageFormatException>(() => { entry.ReadFloatAsync(stream, ByteOrder.LittleEndian); });
+
+            Assert.Equal($"Cannot read a single value from an array of multiple items.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x00, 0x00, 0x00, 0x00 }, new float[] { 0.0F })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x3F, 0x80, 0x00, 0x00 }, new float[] { 1.0F })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0xC0, 0x00, 0x00, 0x00 }, new float[] { -2.0F })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x7F, 0x7F, 0xFF, 0xFF }, new float[] { float.MaxValue })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x7F, 0x80, 0x00, 0x00 }, new float[] { float.PositiveInfinity })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0xFF, 0x80, 0x00, 0x00 }, new float[] { float.NegativeInfinity })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x3F, 0x80, 0x00, 0x00, 0xC0, 0x00, 0x00, 0x00 }, new float[] { 0.0F, 1.0F, -2.0F })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00 }, new float[] { 0.0F })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x80, 0x3F }, new float[] { 1.0F })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0xC0 }, new float[] { -2.0F })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0xFF, 0xFF, 0x7F, 0x7F }, new float[] { float.MaxValue })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x80, 0x7F }, new float[] { float.PositiveInfinity })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x80, 0xFF }, new float[] { float.NegativeInfinity })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x3F, 0x00, 0x00, 0x00, 0xC0 }, new float[] { 0.0F, 1.0F, -2.0F })]
+
+        public async Task ReadFloatArrayAsync_ReturnsValue(ByteOrder byteOrder, byte[] data, float[] expectedValues)
+        {
+            var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.Float, data, 6, byteOrder);
+            var entry = entryTuple.Entry;
+            var stream = entryTuple.Stream;
+
+            var value = await entry.ReadFloatArrayAsync(stream, byteOrder);
+
+            Assert.Equal(expectedValues, value);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte)]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Short)]
+        [InlineDataAttribute(TiffType.Long)]
+        [InlineDataAttribute(TiffType.Rational)]
+        [InlineDataAttribute(TiffType.SByte)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SShort)]
+        [InlineDataAttribute(TiffType.SLong)]
+        [InlineDataAttribute(TiffType.SRational)]
+        [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute(TiffType.Ifd)]
+        [InlineDataAttribute((TiffType)99)]
+        public void ReadFloatArrayAsync_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+
+            var e = Assert.Throws<ImageFormatException>(() => { entry.ReadFloatArrayAsync(stream, ByteOrder.LittleEndian); });
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to a float.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 0.0)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x3F, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 1.0)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 2.0)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, -2.0)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x7F, 0xEF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }, double.MaxValue)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x7F, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, double.PositiveInfinity)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0xFF, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, double.NegativeInfinity)]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }, double.NaN)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 0.0)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x3F }, 1.0)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40 }, 2.0)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0 }, -2.0)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xEF, 0x7F }, double.MaxValue)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x7F }, double.PositiveInfinity)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0xFF }, double.NegativeInfinity)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F }, double.NaN)]
+        public async Task ReadDoubleAsync_ReturnsValue(ByteOrder byteOrder, byte[] data, double expectedValue)
+        {
+            var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.Double, data, 6, byteOrder);
+            var entry = entryTuple.Entry;
+            var stream = entryTuple.Stream;
+
+            var value = await entry.ReadDoubleAsync(stream, byteOrder);
+
+            Assert.Equal(expectedValue, value);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte)]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Short)]
+        [InlineDataAttribute(TiffType.Long)]
+        [InlineDataAttribute(TiffType.Rational)]
+        [InlineDataAttribute(TiffType.SByte)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SShort)]
+        [InlineDataAttribute(TiffType.SLong)]
+        [InlineDataAttribute(TiffType.SRational)]
+        [InlineDataAttribute(TiffType.Float)]
+        [InlineDataAttribute(TiffType.Ifd)]
+        [InlineDataAttribute((TiffType)99)]
+        public void ReadDoubleAsync_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+
+            var e = Assert.Throws<ImageFormatException>(() => { entry.ReadDoubleAsync(stream, ByteOrder.LittleEndian); });
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to a double.", e.Message);
+        }
+
+        [Fact]
+        public void ReadDoubleAsync_ThrowsExceptionIfCountIsNotOne()
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = TiffType.Double, Count = 2 };
+
+            var e = Assert.Throws<ImageFormatException>(() => { entry.ReadDoubleAsync(stream, ByteOrder.LittleEndian); });
+
+            Assert.Equal($"Cannot read a single value from an array of multiple items.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, new double[] { 0.0 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x3F, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, new double[] { 1.0 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, new double[] { 2.0 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, new double[] { -2.0 })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x7F, 0xEF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }, new double[] { double.MaxValue })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x7F, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, new double[] { double.PositiveInfinity })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0xFF, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, new double[] { double.NegativeInfinity })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }, new double[] { double.NaN })]
+        [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3F, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, new double[] { 0.0, 1.0, -2.0 })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, new double[] { 0.0 })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x3F }, new double[] { 1.0 })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40 }, new double[] { 2.0 })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0 }, new double[] { -2.0 })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xEF, 0x7F }, new double[] { double.MaxValue })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x7F }, new double[] { double.PositiveInfinity })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0xFF }, new double[] { double.NegativeInfinity })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F }, new double[] { double.NaN })]
+        [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0 }, new double[] { 0.0, 1.0, -2.0 })]
+        public async Task ReadDoubleArrayAsync_ReturnsValue(ByteOrder byteOrder, byte[] data, double[] expectedValues)
+        {
+            var entryTuple = TiffHelper.GenerateTiffIfdEntry(TiffType.Double, data, 6, byteOrder);
+            var entry = entryTuple.Entry;
+            var stream = entryTuple.Stream;
+
+            var value = await entry.ReadDoubleArrayAsync(stream, byteOrder);
+
+            Assert.Equal(expectedValues, value);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte)]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Short)]
+        [InlineDataAttribute(TiffType.Long)]
+        [InlineDataAttribute(TiffType.Rational)]
+        [InlineDataAttribute(TiffType.SByte)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SShort)]
+        [InlineDataAttribute(TiffType.SLong)]
+        [InlineDataAttribute(TiffType.SRational)]
+        [InlineDataAttribute(TiffType.Float)]
+        [InlineDataAttribute(TiffType.Ifd)]
+        [InlineDataAttribute((TiffType)99)]
+        public void ReadDoubleArrayAsync_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+
+            var e = Assert.Throws<ImageFormatException>(() => { entry.ReadDoubleArrayAsync(stream, ByteOrder.LittleEndian); });
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to a double.", e.Message);
+        }
+
+        [Theory]
         [InlineDataAttribute(TiffType.Long, 1, ByteOrder.LittleEndian, new byte[] { 4, 3, 2, 1 }, new uint[] { 0x01020304 })]
         [InlineDataAttribute(TiffType.Long, 2, ByteOrder.LittleEndian, new byte[] { 4, 3, 2, 1, 6, 5, 4, 3, 99, 99 }, new uint[] { 0x01020304, 0x03040506 })]
         [InlineDataAttribute(TiffType.Long, 1, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, new uint[] { 0x01020304 })]

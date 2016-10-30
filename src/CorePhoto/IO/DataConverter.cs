@@ -50,6 +50,28 @@ namespace CorePhoto.IO
             return (uint)ToInt32(bytes, offset, byteOrder);
         }
 
+        public static Single ToSingle(byte[] bytes, int offset, ByteOrder byteOrder)
+        {
+            byte[] buffer = new byte[4];
+            Array.Copy(bytes, offset, buffer, 0, 4);
+
+            if ((!BitConverter.IsLittleEndian && byteOrder == ByteOrder.LittleEndian) || (BitConverter.IsLittleEndian && byteOrder == ByteOrder.BigEndian))
+                Array.Reverse(buffer);
+
+            return BitConverter.ToSingle(buffer, 0);
+        }
+
+        public static Double ToDouble(byte[] bytes, int offset, ByteOrder byteOrder)
+        {
+            byte[] buffer = new byte[8];
+            Array.Copy(bytes, offset, buffer, 0, 8);
+
+            if ((!BitConverter.IsLittleEndian && byteOrder == ByteOrder.LittleEndian) || (BitConverter.IsLittleEndian && byteOrder == ByteOrder.BigEndian))
+                Array.Reverse(buffer);
+
+            return BitConverter.ToDouble(buffer, 0);
+        }
+
         public static byte[] ToBytes(byte[] bytes, int offset, int count)
         {
             byte[] buffer = new byte[count];

@@ -127,6 +127,22 @@ namespace CorePhotoInfo.Tiff
                         var array = await entry.ReadSignedRationalArrayAsync(_stream, byteOrder);
                         return ConvertArrayToString(array);
                     }
+                case TiffType.Float:
+                    if (entry.Count == 1)
+                        return (await entry.ReadFloatAsync(_stream, byteOrder)).ToString();
+                    else
+                    {
+                        var array = await entry.ReadFloatArrayAsync(_stream, byteOrder);
+                        return ConvertArrayToString(array);
+                    }
+                case TiffType.Double:
+                    if (entry.Count == 1)
+                        return (await entry.ReadDoubleAsync(_stream, byteOrder)).ToString();
+                    else
+                    {
+                        var array = await entry.ReadDoubleArrayAsync(_stream, byteOrder);
+                        return ConvertArrayToString(array);
+                    }
                 default:
                     return "Unknown Type";
             }

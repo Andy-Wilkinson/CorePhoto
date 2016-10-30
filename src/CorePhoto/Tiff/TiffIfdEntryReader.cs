@@ -220,6 +220,76 @@ namespace CorePhoto.Tiff
                        }).ToArray();
         }
 
+        public static Task<float> ReadFloatAsync(this TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            if (entry.Type != TiffType.Float)
+                throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to a float.");
+
+            if (entry.Count != 1)
+                throw new ImageFormatException("Cannot read a single value from an array of multiple items.");
+
+            return ReadFloatAsync_Internal(entry, stream, byteOrder);
+        }
+
+        private static async Task<float> ReadFloatAsync_Internal(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            var array = await ReadFloatArrayAsync_Internal(entry, stream, byteOrder);
+            return array[0];
+        }
+
+        public static Task<float[]> ReadFloatArrayAsync(this TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            if (entry.Type != TiffType.Float)
+                throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to a float.");
+
+            return ReadFloatArrayAsync_Internal(entry, stream, byteOrder);
+        }
+
+        private static async Task<float[]> ReadFloatArrayAsync_Internal(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            byte[] data = await entry.ReadDataAsync(stream, byteOrder);
+
+            return Enumerable.Range(0, entry.Count).Select(index =>
+                       {
+                           return DataConverter.ToSingle(data, index * 4, byteOrder);
+                       }).ToArray();
+        }
+
+        public static Task<double> ReadDoubleAsync(this TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            if (entry.Type != TiffType.Double)
+                throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to a double.");
+
+            if (entry.Count != 1)
+                throw new ImageFormatException("Cannot read a single value from an array of multiple items.");
+
+            return ReadDoubleAsync_Internal(entry, stream, byteOrder);
+        }
+
+        private static async Task<double> ReadDoubleAsync_Internal(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            var array = await ReadDoubleArrayAsync_Internal(entry, stream, byteOrder);
+            return array[0];
+        }
+
+        public static Task<double[]> ReadDoubleArrayAsync(this TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            if (entry.Type != TiffType.Double)
+                throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to a double.");
+
+            return ReadDoubleArrayAsync_Internal(entry, stream, byteOrder);
+        }
+
+        private static async Task<double[]> ReadDoubleArrayAsync_Internal(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            byte[] data = await entry.ReadDataAsync(stream, byteOrder);
+
+            return Enumerable.Range(0, entry.Count).Select(index =>
+                       {
+                           return DataConverter.ToDouble(data, index * 8, byteOrder);
+                       }).ToArray();
+        }
+
         public static Task<TiffIfdReference[]> ReadIfdReferenceArrayAsync(this TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
         {
             var type = entry.Type;
