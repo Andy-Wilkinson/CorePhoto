@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Reflection;
 using CorePhoto.IO;
+using CorePhoto.Metadata.Exif;
 using CorePhoto.Tiff;
 using CorePhotoInfo.Reporting;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ namespace CorePhotoInfo.Tiff
         private Stream _stream;
         private IReportWriter _report;
         private Dictionary<int, string> _tagDictionary = new Dictionary<int, string>();
+        private Dictionary<int, string> _exifTagDictionary = new Dictionary<int, string>();
 
         private TiffDump(Stream stream, IReportWriter reportWriter)
         {
@@ -31,21 +33,21 @@ namespace CorePhotoInfo.Tiff
             _report.WriteLine("Byte order       : {0}", header.ByteOrder);
 
             TiffIfd ifd = await TiffReader.ReadFirstIfdAsync(header, _stream, header.ByteOrder);
-            await WriteTiffIfdInfoAsync(ifd, header.ByteOrder, "IFD ", 0);
+            await WriteTiffIfdInfoAsync(ifd, header.ByteOrder, "IFD ", 0, _tagDictionary);
         }
 
-        private async Task WriteTiffIfdInfoAsync(TiffIfd ifd, ByteOrder byteOrder, string ifdPrefix, int? ifdId)
+        private async Task WriteTiffIfdInfoAsync(TiffIfd ifd, ByteOrder byteOrder, string ifdPrefix, int? ifdId, Dictionary<int, string> tagDictionary)
         {
             _report.WriteSubheader($"{ifdPrefix}{ifdId}");
 
-            await WriteTiffIfdEntriesAsync(ifd, byteOrder);
+            await WriteTiffIfdEntriesAsync(ifd, byteOrder, tagDictionary);
 
             // Write the EXIF IFD
 
             var exifIfd = await ExifReader.ReadExifIfdAsync(ifd, _stream, byteOrder);
 
             if (exifIfd != null)
-                await WriteTiffIfdInfoAsync(exifIfd.Value, byteOrder, $"{ifdPrefix}{ifdId} (EXIF)", null);
+                await WriteTiffIfdInfoAsync(exifIfd.Value, byteOrder, $"{ifdPrefix}{ifdId} (EXIF)", null, _exifTagDictionary);
 
             // Write the sub-IFDs
 
@@ -58,7 +60,7 @@ namespace CorePhotoInfo.Tiff
                 for (int i = 0; i < subIfdOffsets.Length; i++)
                 {
                     TiffIfd subIfd = await TiffReader.ReadIfdAsync(_stream, byteOrder, subIfdOffsets[i]);
-                    await WriteTiffIfdInfoAsync(subIfd, byteOrder, $"{ifdPrefix}{ifdId}-", i);
+                    await WriteTiffIfdInfoAsync(subIfd, byteOrder, $"{ifdPrefix}{ifdId}-", i, _tagDictionary);
                 }
             }
 
@@ -66,20 +68,20 @@ namespace CorePhotoInfo.Tiff
 
             TiffIfd? nextIfd = await TiffReader.ReadNextIfdAsync(ifd, _stream, byteOrder);
             if (nextIfd != null)
-                await WriteTiffIfdInfoAsync(nextIfd.Value, byteOrder, ifdPrefix, ifdId + 1);
+                await WriteTiffIfdInfoAsync(nextIfd.Value, byteOrder, ifdPrefix, ifdId + 1, _tagDictionary);
         }
 
-        private async Task WriteTiffIfdEntriesAsync(TiffIfd ifd, ByteOrder byteOrder)
+        private async Task WriteTiffIfdEntriesAsync(TiffIfd ifd, ByteOrder byteOrder, Dictionary<int, string> tagDictionary)
         {
             foreach (TiffIfdEntry entry in ifd.Entries)
             {
-                await WriteTiffIfdEntryInfoAsync(entry, byteOrder);
+                await WriteTiffIfdEntryInfoAsync(entry, byteOrder, tagDictionary);
             }
         }
 
-        private async Task WriteTiffIfdEntryInfoAsync(TiffIfdEntry entry, ByteOrder byteOrder)
+        private async Task WriteTiffIfdEntryInfoAsync(TiffIfdEntry entry, ByteOrder byteOrder, Dictionary<int, string> tagDictionary)
         {
-            var tagStr = ConvertTagToString(_tagDictionary, entry.Tag);
+            var tagStr = ConvertTagToString(tagDictionary, entry.Tag);
             var typeStr = entry.Count == 1 ? $"{entry.Type}" : $"{entry.Type}[{entry.Count}]";
             string value = await GetTiffIfdEntryDataAsync(entry, byteOrder);
 
@@ -175,6 +177,7 @@ namespace CorePhotoInfo.Tiff
 
             instance.PopulateTagDictionary<TiffTags>(instance._tagDictionary);
             instance.PopulateTagDictionary<DngTags>(instance._tagDictionary);
+            instance.PopulateTagDictionary<ExifTags>(instance._exifTagDictionary);
 
             instance.WriteTiffInfoAsync().Wait();
         }
