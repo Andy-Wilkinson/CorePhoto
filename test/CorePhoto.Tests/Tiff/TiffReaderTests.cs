@@ -357,6 +357,44 @@ namespace CorePhoto.Tests.Tiff
             Assert.Equal(expectedSize, size);
         }
 
+        [Fact]
+        public void GetIfdEntry_ReturnsEntryByTag()
+        {
+            var ifd = new TiffIfd
+            {
+                Entries = new[]
+                {
+                    new TiffIfdEntry { Tag = 10, Type = TiffType.Long, Count = 5},
+                    new TiffIfdEntry { Tag = 15, Type = TiffType.Ascii, Count = 10},
+                    new TiffIfdEntry { Tag = 20, Type = TiffType.Byte, Count = 15}
+                }
+            };
+
+            var entry = TiffReader.GetTiffIfdEntry(ifd, 15).Value;
+
+            Assert.Equal(15, entry.Tag);
+            Assert.Equal(TiffType.Ascii, entry.Type);
+            Assert.Equal(10, entry.Count);
+        }
+
+        [Fact]
+        public void GetIfdEntry_ReturnsNullIfTagIsNotPresent()
+        {
+            var ifd = new TiffIfd
+            {
+                Entries = new[]
+                {
+                    new TiffIfdEntry { Tag = 10, Type = TiffType.Long, Count = 5},
+                    new TiffIfdEntry { Tag = 15, Type = TiffType.Ascii, Count = 10},
+                    new TiffIfdEntry { Tag = 20, Type = TiffType.Byte, Count = 15}
+                }
+            };
+
+            var entry = TiffReader.GetTiffIfdEntry(ifd, 18);
+
+            Assert.Null(entry);
+        }
+
         [Theory]
         [InlineDataAttribute(TiffType.Byte, ByteOrder.LittleEndian, new byte[] { 0, 1, 2, 3 }, 0)]
         [InlineDataAttribute(TiffType.Byte, ByteOrder.LittleEndian, new byte[] { 1, 2, 3, 4 }, 1)]

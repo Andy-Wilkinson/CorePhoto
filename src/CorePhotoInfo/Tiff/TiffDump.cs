@@ -7,6 +7,7 @@ using CorePhoto.Tiff;
 using CorePhotoInfo.Reporting;
 using System.Collections.Generic;
 using CorePhoto.Dng;
+using CorePhoto.Metadata.Exif;
 
 namespace CorePhotoInfo.Tiff
 {
@@ -41,18 +42,10 @@ namespace CorePhotoInfo.Tiff
 
             // Write the EXIF IFD
 
-            var exifIfdEntry = ifd.Entries.FirstOrDefault(e => e.Tag == TiffTags.ExifIFD);
+            var exifIfd = await ExifReader.ReadExifIfdAsync(ifd, _stream, byteOrder);
 
-            if (exifIfdEntry.Tag != 0)
-            {
-                uint[] subIfdOffsets = await TiffReader.ReadIntegerArrayAsync(exifIfdEntry, _stream, byteOrder);
-
-                for (int i = 0; i < subIfdOffsets.Length; i++)
-                {
-                    TiffIfd subIfd = await TiffReader.ReadIfdAsync(_stream, byteOrder, subIfdOffsets[i]);
-                    await WriteTiffIfdInfoAsync(subIfd, byteOrder, $"{ifdPrefix}{ifdId} (EXIF)", null);
-                }
-            }
+            if (exifIfd != null)
+                await WriteTiffIfdInfoAsync(exifIfd.Value, byteOrder, $"{ifdPrefix}{ifdId} (EXIF)", null);
 
             // Write the sub-IFDs
 

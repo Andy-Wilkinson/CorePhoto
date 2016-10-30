@@ -140,6 +140,12 @@ namespace CorePhoto.Tiff
 
         public static int SizeOfData(TiffIfdEntry entry) => SizeOfDataType(entry.Type) * entry.Count;
 
+        public static TiffIfdEntry? GetTiffIfdEntry(TiffIfd ifd, ushort tag)
+        {
+            var entry = ifd.Entries.FirstOrDefault<TiffIfdEntry>(e => e.Tag == tag);
+            return entry.Tag == 0 ? (TiffIfdEntry?)null : entry;
+        }
+
         public static uint GetInteger(TiffIfdEntry entry, ByteOrder byteOrder)
         {
             if (entry.Count != 1)

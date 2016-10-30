@@ -39,6 +39,12 @@ namespace CorePhoto.Tests.Helpers
             return new TiffIfdEntry_Stream_Tuple(entry, stream);
         }
 
+        public static TiffIfdEntry GenerateTiffIfdEntryLong(ushort tag, uint value, ByteOrder byteOrder)
+        {
+            byte[] data = BitConverter.GetBytes(value).WithByteOrder(byteOrder);
+            return new TiffIfdEntry { Tag = tag, Type = TiffType.Long, Count = 1, Value = data };
+        }
+
         // Sub-classes
 
         public class TiffIfdEntry_Stream_Tuple

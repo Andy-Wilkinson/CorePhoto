@@ -77,11 +77,8 @@ namespace CorePhoto.Tests.Helpers
 
         public StreamBuilder WriteBytesEndianOrder(params byte[] value)
         {
-            if ((BitConverter.IsLittleEndian && ByteOrder == ByteOrder.BigEndian)
-            || (!BitConverter.IsLittleEndian && ByteOrder == ByteOrder.LittleEndian))
-                Array.Reverse(value);
-
-            Stream.Write(value, 0, value.Length);
+            byte[] data = value.WithByteOrder(ByteOrder);
+            Stream.Write(data, 0, data.Length);
             return this;
         }
 

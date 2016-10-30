@@ -15,6 +15,9 @@ An experimental raw photo library based on .Net Core
 - DNG
   - [Adobe DNG Pages](https://helpx.adobe.com/photoshop/digital-negative.html)
 
+- Metadata (EXIF)
+  - [EXIF 2.3 Specification](http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf)
+
 - Metadata (XMP)
   - [Adobe XMP Pages](http://www.adobe.com/products/xmp.html)
   - [Adobe XMP Developer Centre](http://www.adobe.com/devnet/xmp.html)
