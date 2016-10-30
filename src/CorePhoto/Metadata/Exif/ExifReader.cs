@@ -12,7 +12,7 @@ namespace CorePhoto.Metadata.Exif
             if (exifEntry == null)
                 return null;
             else
-                return TiffReader.GetIfdReference(exifEntry.Value, byteOrder);
+                return exifEntry.Value.GetIfdReference(byteOrder);
         }
     }
 }
