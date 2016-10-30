@@ -236,6 +236,45 @@ namespace CorePhoto.Tests.Tiff
         }
 
         [Theory]
+        [InlineDataAttribute(ByteOrder.LittleEndian, TiffType.Long)]
+        [InlineDataAttribute(ByteOrder.LittleEndian, TiffType.Ifd)]
+        [InlineDataAttribute(ByteOrder.BigEndian, TiffType.Long)]
+        [InlineDataAttribute(ByteOrder.BigEndian, TiffType.Ifd)]
+        public async Task ReadSubIfdAsync_ReadsCorrectly(ByteOrder byteOrder, TiffType type)
+        {
+            var stream = new StreamBuilder(byteOrder)
+                                    .WritePadding(10)
+                                    .WriteUInt32(10)
+                                    .WriteUInt32(42)
+                                    .WriteUInt32(30)
+                                    .WritePadding(20)
+                                    .WriteInt16(3)
+                                    .WriteTiffIfdEntry(2, TiffType.Ascii, 20, new byte[] { 1, 2, 3, 4 })
+                                    .WriteTiffIfdEntry(4, TiffType.Short, 40, new byte[] { 2, 3, 4, 5 })
+                                    .WriteTiffIfdEntry(6, TiffType.Double, 60, new byte[] { 3, 4, 5, 6 })
+                                    .WriteUInt32(123456)
+                                    .ToStream();
+
+            var tiffIfd = new TiffIfd
+            {
+                Entries = new[]
+                {
+                    new TiffIfdEntry { Tag = 10, Type = TiffType.Ascii, Count = 10},
+                    new TiffIfdEntry { Tag = TiffTags.SubIFDs, Type = type, Count = 3, Value = ByteArrayHelper.ToBytes(10u, byteOrder) },
+                    new TiffIfdEntry { Tag = 20, Type = TiffType.Ascii, Count = 10}
+                }
+            };
+
+            var subIfd = (await TiffReader.ReadSubIfdAsync(tiffIfd, 1, stream, byteOrder));
+
+            Assert.Equal(3, subIfd.Entries.Length);
+            AssertTiff.Equal(new TiffIfdEntry { Tag = 2, Type = TiffType.Ascii, Count = 20, Value = new byte[] { 1, 2, 3, 4 } }, subIfd.Entries[0]);
+            AssertTiff.Equal(new TiffIfdEntry { Tag = 4, Type = TiffType.Short, Count = 40, Value = new byte[] { 2, 3, 4, 5 } }, subIfd.Entries[1]);
+            AssertTiff.Equal(new TiffIfdEntry { Tag = 6, Type = TiffType.Double, Count = 60, Value = new byte[] { 3, 4, 5, 6 } }, subIfd.Entries[2]);
+            Assert.Equal(123456u, subIfd.NextIfdOffset);
+        }
+
+        [Theory]
         [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 1, 2, 3, 4 }, 3, new byte[] { }, new byte[] { 1, 2, 3, 4 })]
         [InlineDataAttribute(ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, 3, new byte[] { }, new byte[] { 1, 2, 3, 4 })]
         [InlineDataAttribute(ByteOrder.LittleEndian, new byte[] { 1, 2, 3, 4 }, 4, new byte[] { }, new byte[] { 1, 2, 3, 4 })]
@@ -300,6 +339,7 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SRational, 8)]
         [InlineDataAttribute(TiffType.Float, 4)]
         [InlineDataAttribute(TiffType.Double, 8)]
+        [InlineDataAttribute(TiffType.Ifd, 4)]
         [InlineDataAttribute((TiffType)999, 0)]
 
         public void SizeOfDataType_ReturnsCorrectSize(TiffType type, int expectedSize)
@@ -322,6 +362,7 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SRational, 1, 8)]
         [InlineDataAttribute(TiffType.Float, 1, 4)]
         [InlineDataAttribute(TiffType.Double, 1, 8)]
+        [InlineDataAttribute(TiffType.Ifd, 1, 4)]
         [InlineDataAttribute((TiffType)999, 1, 0)]
 
         public void SizeOfData_SingleItem_ReturnsCorrectSize(TiffType type, int count, int expectedSize)
@@ -346,6 +387,7 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SRational, 10, 80)]
         [InlineDataAttribute(TiffType.Float, 2, 8)]
         [InlineDataAttribute(TiffType.Double, 2, 16)]
+        [InlineDataAttribute(TiffType.Ifd, 10, 40)]
         [InlineDataAttribute((TiffType)999, 1050, 0)]
 
         public void SizeOfData_Array_ReturnsCorrectSize(TiffType type, int count, int expectedSize)
@@ -355,6 +397,44 @@ namespace CorePhoto.Tests.Tiff
             var size = TiffReader.SizeOfData(entry);
 
             Assert.Equal(expectedSize, size);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Long)]
+        [InlineDataAttribute(TiffType.Ifd)]
+        public void CountSubIfds_ReturnsCount(TiffType type)
+        {
+            var ifd = new TiffIfd
+            {
+                Entries = new[]
+                {
+                    new TiffIfdEntry { Tag = 10, Type = TiffType.Long, Count = 5},
+                    new TiffIfdEntry { Tag = TiffTags.SubIFDs, Type = type, Count = 10},
+                    new TiffIfdEntry { Tag = 20, Type = TiffType.Byte, Count = 15}
+                }
+            };
+
+            var count = TiffReader.CountSubIfds(ifd);
+
+            Assert.Equal(10, count);
+        }
+
+        [Fact]
+        public void CountSubIfds_ReturnsZeroIfNoSubIfds()
+        {
+            var ifd = new TiffIfd
+            {
+                Entries = new[]
+                {
+                    new TiffIfdEntry { Tag = 10, Type = TiffType.Long, Count = 5},
+                    new TiffIfdEntry { Tag = 15, Type = TiffType.Ascii, Count = 10},
+                    new TiffIfdEntry { Tag = 20, Type = TiffType.Byte, Count = 15}
+                }
+            };
+
+            var count = TiffReader.CountSubIfds(ifd);
+
+            Assert.Equal(0, count);
         }
 
         [Fact]
@@ -445,6 +525,7 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SRational)]
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute(TiffType.Ifd)]
         [InlineDataAttribute((TiffType)99)]
         public void GetInteger_ThrowsExceptionIfInvalidType(TiffType type)
         {
@@ -521,6 +602,7 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SRational)]
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute(TiffType.Ifd)]
         [InlineDataAttribute((TiffType)99)]
         public void GetSignedInteger_ThrowsExceptionIfInvalidType(TiffType type)
         {
@@ -543,6 +625,80 @@ namespace CorePhoto.Tests.Tiff
             var entry = new TiffIfdEntry { Type = type, Count = 2 };
 
             var e = Assert.Throws<ImageFormatException>(() => TiffReader.GetSignedInteger(entry, byteOrder));
+
+            Assert.Equal($"Cannot read a single value from an array of multiple items.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 0, 0, 0, 0 }, 0)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 1, 0, 0, 0 }, 1)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 0, 1, 0, 0 }, 256)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 0, 0, 1, 0 }, 256 * 256)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 0, 0, 0, 1 }, 256 * 256 * 256)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 1, 2, 3, 4 }, 67305985)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian, new byte[] { 255, 255, 255, 255 }, UInt32.MaxValue)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 0, 0, 0, 0 }, 0)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1 }, 1)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 0, 0, 1, 0 }, 256)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 0, 1, 0, 0 }, 256 * 256)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 1, 0, 0, 0 }, 256 * 256 * 256)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 4, 3, 2, 1 }, 67305985)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian, new byte[] { 255, 255, 255, 255 }, UInt32.MaxValue)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.LittleEndian, new byte[] { 0, 0, 0, 0 }, 0)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.LittleEndian, new byte[] { 1, 0, 0, 0 }, 1)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.LittleEndian, new byte[] { 0, 1, 0, 0 }, 256)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.LittleEndian, new byte[] { 0, 0, 1, 0 }, 256 * 256)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.LittleEndian, new byte[] { 0, 0, 0, 1 }, 256 * 256 * 256)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.LittleEndian, new byte[] { 1, 2, 3, 4 }, 67305985)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.LittleEndian, new byte[] { 255, 255, 255, 255 }, UInt32.MaxValue)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.BigEndian, new byte[] { 0, 0, 0, 0 }, 0)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.BigEndian, new byte[] { 0, 0, 0, 1 }, 1)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.BigEndian, new byte[] { 0, 0, 1, 0 }, 256)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.BigEndian, new byte[] { 0, 1, 0, 0 }, 256 * 256)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.BigEndian, new byte[] { 1, 0, 0, 0 }, 256 * 256 * 256)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.BigEndian, new byte[] { 4, 3, 2, 1 }, 67305985)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.BigEndian, new byte[] { 255, 255, 255, 255 }, UInt32.MaxValue)]
+        public void GetIfdOffset_ReturnsValue(TiffType type, ByteOrder byteOrder, byte[] data, uint expectedValue)
+        {
+            var entry = new TiffIfdEntry { Type = type, Count = 1, Value = data };
+
+            var value = TiffReader.GetIfdOffset(entry, byteOrder);
+
+            Assert.Equal(expectedValue, value);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte)]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Short)]
+        [InlineDataAttribute(TiffType.Rational)]
+        [InlineDataAttribute(TiffType.SByte)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SShort)]
+        [InlineDataAttribute(TiffType.SLong)]
+        [InlineDataAttribute(TiffType.SRational)]
+        [InlineDataAttribute(TiffType.Float)]
+        [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute((TiffType)99)]
+        public void GetIfdOffset_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var entry = new TiffIfdEntry { Type = type, Count = 1 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.GetIfdOffset(entry, ByteOrder.LittleEndian));
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to an IFD offset.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.LittleEndian)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.BigEndian)]
+        public void GetIfdOffset_ThrowsExceptionIfCountIsNotOne(TiffType type, ByteOrder byteOrder)
+        {
+            var entry = new TiffIfdEntry { Type = type, Count = 2 };
+
+            var e = Assert.Throws<ImageFormatException>(() => TiffReader.GetIfdOffset(entry, byteOrder));
 
             Assert.Equal($"Cannot read a single value from an array of multiple items.", e.Message);
         }
@@ -585,6 +741,7 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SRational)]
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute(TiffType.Ifd)]
         [InlineDataAttribute((TiffType)99)]
         public void ReadIntegerArrayAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
@@ -634,6 +791,7 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SRational)]
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute(TiffType.Ifd)]
         [InlineDataAttribute((TiffType)99)]
         public void ReadSignedIntegerArrayAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
@@ -677,6 +835,7 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SRational)]
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute(TiffType.Ifd)]
         [InlineDataAttribute((TiffType)99)]
         public void ReadStringAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
@@ -798,6 +957,7 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SRational)]
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute(TiffType.Ifd)]
         [InlineDataAttribute((TiffType)99)]
         public void ReadRationalAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
@@ -821,6 +981,7 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SLong)]
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute(TiffType.Ifd)]
         [InlineDataAttribute((TiffType)99)]
         public void ReadSignedRationalAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
@@ -844,6 +1005,7 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SRational)]
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute(TiffType.Ifd)]
         [InlineDataAttribute((TiffType)99)]
         public void ReadRationalArrayAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
@@ -867,6 +1029,7 @@ namespace CorePhoto.Tests.Tiff
         [InlineDataAttribute(TiffType.SLong)]
         [InlineDataAttribute(TiffType.Float)]
         [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute(TiffType.Ifd)]
         [InlineDataAttribute((TiffType)99)]
         public void ReadSignedRationalArrayAsync_ThrowsExceptionIfInvalidType(TiffType type)
         {
@@ -900,6 +1063,49 @@ namespace CorePhoto.Tests.Tiff
             var e = Assert.Throws<ImageFormatException>(() => { TiffReader.ReadSignedRationalAsync(entry, stream, byteOrder); });
 
             Assert.Equal($"Cannot read a single value from an array of multiple items.", e.Message);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Long, 1, ByteOrder.LittleEndian, new byte[] { 4, 3, 2, 1 }, new uint[] { 0x01020304 })]
+        [InlineDataAttribute(TiffType.Long, 2, ByteOrder.LittleEndian, new byte[] { 4, 3, 2, 1, 6, 5, 4, 3, 99, 99 }, new uint[] { 0x01020304, 0x03040506 })]
+        [InlineDataAttribute(TiffType.Long, 1, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, new uint[] { 0x01020304 })]
+        [InlineDataAttribute(TiffType.Long, 2, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4, 3, 4, 5, 6, 99, 99 }, new uint[] { 0x01020304, 0x03040506 })]
+        [InlineDataAttribute(TiffType.Ifd, 1, ByteOrder.LittleEndian, new byte[] { 4, 3, 2, 1 }, new uint[] { 0x01020304 })]
+        [InlineDataAttribute(TiffType.Ifd, 2, ByteOrder.LittleEndian, new byte[] { 4, 3, 2, 1, 6, 5, 4, 3, 99, 99 }, new uint[] { 0x01020304, 0x03040506 })]
+        [InlineDataAttribute(TiffType.Ifd, 1, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4 }, new uint[] { 0x01020304 })]
+        [InlineDataAttribute(TiffType.Ifd, 2, ByteOrder.BigEndian, new byte[] { 1, 2, 3, 4, 3, 4, 5, 6, 99, 99 }, new uint[] { 0x01020304, 0x03040506 })]
+        public async Task ReadIfdOffsetArrayAsync_ReturnsValue(TiffType type, int count, ByteOrder byteOrder, byte[] data, uint[] expectedValue)
+        {
+            var entryTuple = TiffHelper.GenerateTiffIfdEntry(type, data, 6, byteOrder, count);
+            var entry = entryTuple.Entry;
+            var stream = entryTuple.Stream;
+
+            var value = await TiffReader.ReadIfdOffsetArrayAsync(entry, stream, byteOrder);
+
+            Assert.Equal(expectedValue, value);
+        }
+
+        [Theory]
+        [InlineDataAttribute(TiffType.Byte)]
+        [InlineDataAttribute(TiffType.Ascii)]
+        [InlineDataAttribute(TiffType.Short)]
+        [InlineDataAttribute(TiffType.Rational)]
+        [InlineDataAttribute(TiffType.SByte)]
+        [InlineDataAttribute(TiffType.Undefined)]
+        [InlineDataAttribute(TiffType.SShort)]
+        [InlineDataAttribute(TiffType.SLong)]
+        [InlineDataAttribute(TiffType.SRational)]
+        [InlineDataAttribute(TiffType.Float)]
+        [InlineDataAttribute(TiffType.Double)]
+        [InlineDataAttribute((TiffType)99)]
+        public void ReadIfdOffsetArrayAsync_ThrowsExceptionIfInvalidType(TiffType type)
+        {
+            var stream = new StreamBuilder(ByteOrder.LittleEndian).ToStream();
+            var entry = new TiffIfdEntry { Type = type, Count = 10 };
+
+            var e = Assert.Throws<ImageFormatException>(() => { TiffReader.ReadIfdOffsetArrayAsync(entry, stream, ByteOrder.LittleEndian); });
+
+            Assert.Equal($"A value of type '{type}' cannot be converted to an IFD offset.", e.Message);
         }
     }
 }

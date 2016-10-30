@@ -81,6 +81,17 @@ namespace CorePhoto.Tiff
             return nextIfd;
         }
 
+        public static async Task<TiffIfd> ReadSubIfdAsync(TiffIfd ifd, int index, Stream stream, ByteOrder byteOrder)
+        {
+            var subIfdsEntry = TiffReader.GetTiffIfdEntry(ifd, TiffTags.SubIFDs);
+
+            if (subIfdsEntry == null)
+                throw new NotImplementedException();
+
+            var offsets = await TiffReader.ReadIfdOffsetArrayAsync(subIfdsEntry.Value, stream, byteOrder);
+            return await TiffReader.ReadIfdAsync(stream, byteOrder, offsets[index]);
+        }
+
         public static TiffIfdEntry ParseIfdEntry(byte[] bytes, int offset, ByteOrder byteOrder)
         {
             ushort tag = DataConverter.ToUInt16(bytes, offset + 0, byteOrder);
@@ -128,6 +139,7 @@ namespace CorePhoto.Tiff
                 case TiffType.Long:
                 case TiffType.SLong:
                 case TiffType.Float:
+                case TiffType.Ifd:
                     return 4;
                 case TiffType.Rational:
                 case TiffType.SRational:
@@ -139,6 +151,12 @@ namespace CorePhoto.Tiff
         }
 
         public static int SizeOfData(TiffIfdEntry entry) => SizeOfDataType(entry.Type) * entry.Count;
+
+        public static int CountSubIfds(TiffIfd ifd)
+        {
+            var subIfdsEntry = GetTiffIfdEntry(ifd, TiffTags.SubIFDs);
+            return subIfdsEntry == null ? 0 : subIfdsEntry.Value.Count;
+        }
 
         public static TiffIfdEntry? GetTiffIfdEntry(TiffIfd ifd, ushort tag)
         {
@@ -182,12 +200,33 @@ namespace CorePhoto.Tiff
             }
         }
 
+        public static uint GetIfdOffset(TiffIfdEntry entry, ByteOrder byteOrder)
+        {
+            if (entry.Count != 1)
+                throw new ImageFormatException("Cannot read a single value from an array of multiple items.");
+
+            if (entry.Type != TiffType.Long && entry.Type != TiffType.Ifd)
+                throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to an IFD offset.");
+
+            return DataConverter.ToUInt32(entry.Value, 0, byteOrder);
+        }
+
         public static Task<uint[]> ReadIntegerArrayAsync(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
         {
             var type = entry.Type;
 
             if (type != TiffType.Byte && type != TiffType.Short && type != TiffType.Long)
                 throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to an unsigned integer.");
+
+            return ReadIntegerArrayAsync_Internal(entry, stream, byteOrder);
+        }
+
+        public static Task<uint[]> ReadIfdOffsetArrayAsync(TiffIfdEntry entry, Stream stream, ByteOrder byteOrder)
+        {
+            var type = entry.Type;
+
+            if (type != TiffType.Long && type != TiffType.Ifd)
+                throw new ImageFormatException($"A value of type '{entry.Type}' cannot be converted to an IFD offset.");
 
             return ReadIntegerArrayAsync_Internal(entry, stream, byteOrder);
         }
@@ -207,6 +246,7 @@ namespace CorePhoto.Tiff
                         return Enumerable.Range(0, entry.Count).Select(index => (uint)DataConverter.ToUInt16(data, index * 2, byteOrder)).ToArray();
                     }
                 case TiffType.Long:
+                case TiffType.Ifd:
                     {
                         byte[] data = await ReadDataAsync(entry, stream, byteOrder);
                         return Enumerable.Range(0, entry.Count).Select(index => DataConverter.ToUInt32(data, index * 4, byteOrder)).ToArray();

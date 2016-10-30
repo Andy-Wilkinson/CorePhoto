@@ -51,17 +51,12 @@ namespace CorePhotoInfo.Tiff
 
             // Write the sub-IFDs
 
-            var subIfdEntry = ifd.Entries.FirstOrDefault(e => e.Tag == TiffTags.SubIFDs);
+            var subIfdCount = TiffReader.CountSubIfds(ifd);
 
-            if (subIfdEntry.Tag != 0)
+            for (int i = 0; i < subIfdCount; i++)
             {
-                uint[] subIfdOffsets = await TiffReader.ReadIntegerArrayAsync(subIfdEntry, _stream, byteOrder);
-
-                for (int i = 0; i < subIfdOffsets.Length; i++)
-                {
-                    TiffIfd subIfd = await TiffReader.ReadIfdAsync(_stream, byteOrder, subIfdOffsets[i]);
-                    await WriteTiffIfdInfoAsync(subIfd, byteOrder, $"{ifdPrefix}{ifdId}-", i, _tagDictionary);
-                }
+                TiffIfd subIfd = await TiffReader.ReadSubIfdAsync(ifd, i, _stream, byteOrder);
+                await WriteTiffIfdInfoAsync(subIfd, byteOrder, $"{ifdPrefix}{ifdId}-", i, _tagDictionary);
             }
 
             // Write the next IFD

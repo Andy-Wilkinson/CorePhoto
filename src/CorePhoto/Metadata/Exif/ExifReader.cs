@@ -14,7 +14,7 @@ namespace CorePhoto.Metadata.Exif
             if (exifEntry == null)
                 return null;
 
-            uint offset = TiffReader.GetInteger(exifEntry.Value, byteOrder);
+            uint offset = TiffReader.GetIfdOffset(exifEntry.Value, byteOrder);
             return await TiffReader.ReadIfdAsync(stream, byteOrder, offset);
         }
     }

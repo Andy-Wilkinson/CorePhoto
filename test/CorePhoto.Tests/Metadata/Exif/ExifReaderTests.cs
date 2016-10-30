@@ -12,8 +12,11 @@ namespace CorePhoto.Tests.Metadata.Exif
         public static object[][] ByteOrderValues = new[] { new object[] { ByteOrder.LittleEndian }, new object[] { ByteOrder.BigEndian } };
 
         [Theory]
-        [MemberDataAttribute(nameof(ByteOrderValues))]
-        public async Task ReadExifIfdAsync_ReadsCorrectly(ByteOrder byteOrder)
+        [InlineDataAttribute(TiffType.Long, ByteOrder.LittleEndian)]
+        [InlineDataAttribute(TiffType.Long, ByteOrder.BigEndian)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.LittleEndian)]
+        [InlineDataAttribute(TiffType.Ifd, ByteOrder.BigEndian)]
+        public async Task ReadExifIfdAsync_ReadsCorrectly(TiffType type, ByteOrder byteOrder)
         {
             var stream = new StreamBuilder(byteOrder)
                                     .WritePadding(20)
@@ -29,7 +32,7 @@ namespace CorePhoto.Tests.Metadata.Exif
                 Entries = new[]
                 {
                     new TiffIfdEntry { Tag = 10, Type = TiffType.Ascii, Count = 10},
-                    TiffHelper.GenerateTiffIfdEntryLong(TiffTags.ExifIFD, 20u, byteOrder),
+                    TiffHelper.GenerateTiffIfdEntry(TiffTags.ExifIFD, type, 20u, byteOrder),
                     new TiffIfdEntry { Tag = 20, Type = TiffType.Ascii, Count = 10}
                 }
             };
