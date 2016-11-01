@@ -42,8 +42,6 @@ namespace CorePhotoInfo.Tiff
             // Write the IFD dump
 
             await WriteTiffIfdEntriesAsync(ifd, byteOrder, tagDictionary);
-            _report.WriteLine("");
-            await WriteTiffImageInformationAsync(ifd, byteOrder);
 
             // Write the EXIF IFD
 
@@ -76,17 +74,28 @@ namespace CorePhotoInfo.Tiff
         {
             foreach (TiffIfdEntry entry in ifd.Entries)
             {
-                await WriteTiffIfdEntryInfoAsync(entry, byteOrder, tagDictionary);
+                await WriteTiffIfdEntryInfoAsync(ifd, entry, byteOrder, tagDictionary);
             }
         }
 
-        private async Task WriteTiffIfdEntryInfoAsync(TiffIfdEntry entry, ByteOrder byteOrder, Dictionary<int, string> tagDictionary)
+        private async Task WriteTiffIfdEntryInfoAsync(TiffIfd ifd, TiffIfdEntry entry, ByteOrder byteOrder, Dictionary<int, string> tagDictionary)
         {
             var tagStr = ConvertTagToString(tagDictionary, entry.Tag);
             var typeStr = entry.Count == 1 ? $"{entry.Type}" : $"{entry.Type}[{entry.Count}]";
-            string value = await GetTiffIfdEntryDataAsync(entry, byteOrder);
+            object value = await GetTiffIfdValueAsync(ifd, entry, byteOrder);
 
-            _report.WriteLine($"{tagStr} ({typeStr}) = {value}");
+            _report.WriteLine($"{tagStr} = {value}");
+        }
+
+        private async Task<object> GetTiffIfdValueAsync(TiffIfd ifd, TiffIfdEntry entry, ByteOrder byteOrder)
+        {
+            switch (entry.Tag)
+            {
+                case TiffTags.Compression:
+                    return ifd.GetCompression(byteOrder);
+                default:
+                    return await GetTiffIfdEntryDataAsync(entry, byteOrder);
+            }
         }
 
         private async Task<string> GetTiffIfdEntryDataAsync(TiffIfdEntry entry, ByteOrder byteOrder)
@@ -147,14 +156,11 @@ namespace CorePhotoInfo.Tiff
                         var array = await entry.ReadDoubleArrayAsync(_stream, byteOrder);
                         return ConvertArrayToString(array);
                     }
+                case TiffType.Undefined:
+                    return "Undefined";
                 default:
-                    return "Unknown Type";
+                    return $"Unknown Type ({(int)entry.Type})";
             }
-        }
-
-        private async Task WriteTiffImageInformationAsync(TiffIfd ifd, ByteOrder byteOrder)
-        {
-            _report.WriteLine("Image compression: {0}", ifd.GetCompression(byteOrder));
         }
 
         private string ConvertArrayToString<T>(T[] array)
