@@ -91,6 +91,8 @@ namespace CorePhotoInfo.Tiff
         {
             switch (entry.Tag)
             {
+                case TiffTags.Artist:
+                    return ifd.ReadArtist(_stream, byteOrder);
                 case TiffTags.Compression:
                     return ifd.GetCompression(byteOrder);
                 default:

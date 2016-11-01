@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using CorePhoto.IO;
 using CorePhoto.Tiff;
 
@@ -8,16 +9,25 @@ namespace CorePhoto.Tests.Helpers
 {
     public static class TiffHelper
     {
-        public static TiffIfd GenerateTiffIfd(ushort tag, TiffType type, int? value, ByteOrder byteOrder)
+        public static TiffIfd GenerateTiffIfd(ushort tag, TiffType type, object value, ByteOrder byteOrder)
+        {
+            return GenerateTiffIfdWithStream(tag, type, value, byteOrder).Ifd;
+        }
+
+        public static TiffIfd_Stream_Tuple GenerateTiffIfdWithStream(ushort tag, TiffType type, object value, ByteOrder byteOrder)
         {
             if (value == null)
             {
-                return TiffHelper.GenerateTiffIfd();
+                var ifd = TiffHelper.GenerateTiffIfd();
+                var stream = new StreamBuilder(byteOrder).ToStream();
+                return new TiffIfd_Stream_Tuple(ifd, stream);
             }
             else
             {
-                var ifdEntryTuple = TiffHelper.GenerateTiffIfdEntry(TiffTags.Compression, type, value.Value, byteOrder);
-                return TiffHelper.GenerateTiffIfd(ifdEntryTuple.Entry);
+                var ifdEntryTuple = TiffHelper.GenerateTiffIfdEntry(tag, type, value, byteOrder);
+                var ifd = TiffHelper.GenerateTiffIfd(ifdEntryTuple.Entry);
+                var stream = ifdEntryTuple.Stream;
+                return new TiffIfd_Stream_Tuple(ifd, stream);
             }
         }
 
@@ -30,33 +40,38 @@ namespace CorePhoto.Tests.Helpers
             return new TiffIfd { Entries = entries };
         }
 
-        public static TiffIfdEntry_Stream_Tuple GenerateTiffIfdEntry(ushort tag, TiffType type, int value, ByteOrder byteOrder)
+        public static TiffIfdEntry_Stream_Tuple GenerateTiffIfdEntry(ushort tag, TiffType type, object value, ByteOrder byteOrder)
         {
             byte[] data = new byte[0];
+            int count = 1;
 
             switch (type)
             {
                 case TiffType.Byte:
-                    data = new byte[] { (byte)value };
+                    data = new byte[] { (byte)(int)value };
                     break;
                 case TiffType.Short:
-                    data = BitConverter.GetBytes((ushort)value).WithByteOrder(byteOrder);
+                    data = BitConverter.GetBytes((ushort)(int)value).WithByteOrder(byteOrder);
                     break;
                 case TiffType.Long:
-                    data = BitConverter.GetBytes((uint)value).WithByteOrder(byteOrder);
+                    data = BitConverter.GetBytes((uint)(int)value).WithByteOrder(byteOrder);
                     break;
                 case TiffType.SByte:
-                    data = BitConverter.GetBytes((sbyte)value);
+                    data = BitConverter.GetBytes((sbyte)(int)value);
                     break;
                 case TiffType.SShort:
-                    data = BitConverter.GetBytes((short)value).WithByteOrder(byteOrder);
+                    data = BitConverter.GetBytes((short)(int)value).WithByteOrder(byteOrder);
                     break;
                 case TiffType.SLong:
                     data = BitConverter.GetBytes((int)value).WithByteOrder(byteOrder);
                     break;
+                case TiffType.Ascii:
+                    data = Encoding.ASCII.GetBytes((string)value);
+                    count = data.Length;
+                    break;
             }
 
-            return GenerateTiffIfdEntry(tag, TiffType.Short, data, 6, byteOrder, 1);
+            return GenerateTiffIfdEntry(tag, type, data, 6, byteOrder, count);
         }
 
         public static TiffIfdEntry_Stream_Tuple GenerateTiffIfdEntry(TiffType type, byte[] data, byte paddingByteCount, ByteOrder byteOrder)
@@ -117,6 +132,25 @@ namespace CorePhoto.Tests.Helpers
             }
 
             public TiffIfdEntry Entry
+            {
+                get;
+            }
+
+            public Stream Stream
+            {
+                get;
+            }
+        }
+
+        public class TiffIfd_Stream_Tuple
+        {
+            public TiffIfd_Stream_Tuple(TiffIfd ifd, Stream stream)
+            {
+                Ifd = ifd;
+                Stream = stream;
+            }
+
+            public TiffIfd Ifd
             {
                 get;
             }
