@@ -95,6 +95,10 @@ namespace CorePhotoInfo.Tiff
                     return ifd.ReadArtist(_stream, byteOrder);
                 case TiffTags.Compression:
                     return ifd.GetCompression(byteOrder);
+                case TiffTags.NewSubfileType:
+                    return ifd.GetNewSubfileType(byteOrder);
+                case TiffTags.PhotometricInterpretation:
+                    return ifd.GetPhotometricInterpretation(byteOrder);
                 default:
                     return await GetTiffIfdEntryDataAsync(entry, byteOrder);
             }

@@ -16,6 +16,18 @@ namespace CorePhoto.Tiff
             return entry == null ? TiffCompression.None : (TiffCompression)entry.Value.GetInteger(byteOrder);
         }
 
+        public static TiffNewSubfileType GetNewSubfileType(this TiffIfd ifd, ByteOrder byteOrder)
+        {
+            var entry = TiffReader.GetTiffIfdEntry(ifd, TiffTags.NewSubfileType);
+            return entry == null ? TiffNewSubfileType.FullImage : (TiffNewSubfileType)entry.Value.GetInteger(byteOrder);
+        }
+
+        public static TiffPhotometricInterpretation? GetPhotometricInterpretation(this TiffIfd ifd, ByteOrder byteOrder)
+        {
+            var entry = TiffReader.GetTiffIfdEntry(ifd, TiffTags.PhotometricInterpretation);
+            return entry == null ? null : (TiffPhotometricInterpretation?)entry.Value.GetInteger(byteOrder);
+        }
+
         // Helper functions
 
         private static Task<string> ReadString(TiffIfd ifd, ushort tag, Stream stream, ByteOrder byteOrder)

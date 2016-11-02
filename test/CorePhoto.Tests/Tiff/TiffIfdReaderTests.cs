@@ -36,13 +36,49 @@ namespace CorePhoto.Tests.Tiff
         [InlineData(ByteOrder.LittleEndian, TiffType.Short, 32773, TiffCompression.PackBits)]
         [InlineData(ByteOrder.LittleEndian, TiffType.Short, 99, (TiffCompression)99)]
         [InlineData(ByteOrder.BigEndian, TiffType.Short, 1, TiffCompression.None)]
-        [InlineData(ByteOrder.BigEndian, TiffType.Short, 99, (TiffCompression)99)]
         [InlineData(ByteOrder.BigEndian, TiffType.Short, 32773, TiffCompression.PackBits)]
+        [InlineData(ByteOrder.BigEndian, TiffType.Short, 99, (TiffCompression)99)]
         public void GetCompression_ReturnsValue(ByteOrder byteOrder, TiffType type, object data, TiffCompression expectedResult)
         {
             var ifd = TiffHelper.GenerateTiffIfd(TiffTags.Compression, type, data, byteOrder);
 
             var result = ifd.GetCompression(byteOrder);
+
+            Assert.Equal(expectedResult, result);
+        }
+
+        [Theory]
+        [InlineData(ByteOrder.LittleEndian, TiffType.Undefined, null, TiffNewSubfileType.FullImage)]
+        [InlineData(ByteOrder.LittleEndian, TiffType.Short, 0, TiffNewSubfileType.FullImage)]
+        [InlineData(ByteOrder.LittleEndian, TiffType.Short, 2, TiffNewSubfileType.SinglePage)]
+        [InlineData(ByteOrder.LittleEndian, TiffType.Short, 3, TiffNewSubfileType.SinglePage | TiffNewSubfileType.Preview)]
+        [InlineData(ByteOrder.LittleEndian, TiffType.Short, 99, (TiffNewSubfileType)99)]
+        [InlineData(ByteOrder.BigEndian, TiffType.Short, 0, TiffNewSubfileType.FullImage)]
+        [InlineData(ByteOrder.BigEndian, TiffType.Short, 2, TiffNewSubfileType.SinglePage)]
+        [InlineData(ByteOrder.BigEndian, TiffType.Short, 3, TiffNewSubfileType.SinglePage | TiffNewSubfileType.Preview)]
+        [InlineData(ByteOrder.BigEndian, TiffType.Short, 99, (TiffNewSubfileType)99)]
+        public void GetNewSubfileType_ReturnsValue(ByteOrder byteOrder, TiffType type, object data, TiffNewSubfileType expectedResult)
+        {
+            var ifd = TiffHelper.GenerateTiffIfd(TiffTags.NewSubfileType, type, data, byteOrder);
+
+            var result = ifd.GetNewSubfileType(byteOrder);
+
+            Assert.Equal(expectedResult, result);
+        }
+
+        [Theory]
+        [InlineData(ByteOrder.LittleEndian, TiffType.Undefined, null, null)]
+        [InlineData(ByteOrder.LittleEndian, TiffType.Short, 1, TiffPhotometricInterpretation.BlackIsZero)]
+        [InlineData(ByteOrder.LittleEndian, TiffType.Short, 34892, TiffPhotometricInterpretation.LinearRaw)]
+        [InlineData(ByteOrder.LittleEndian, TiffType.Short, 99, (TiffPhotometricInterpretation)99)]
+        [InlineData(ByteOrder.BigEndian, TiffType.Short, 1, TiffPhotometricInterpretation.BlackIsZero)]
+        [InlineData(ByteOrder.BigEndian, TiffType.Short, 34892, TiffPhotometricInterpretation.LinearRaw)]
+        [InlineData(ByteOrder.BigEndian, TiffType.Short, 99, (TiffPhotometricInterpretation)99)]
+        public void GetPhotometricInterpretation_ReturnsValue(ByteOrder byteOrder, TiffType type, object data, TiffPhotometricInterpretation? expectedResult)
+        {
+            var ifd = TiffHelper.GenerateTiffIfd(TiffTags.PhotometricInterpretation, type, data, byteOrder);
+
+            var result = ifd.GetPhotometricInterpretation(byteOrder);
 
             Assert.Equal(expectedResult, result);
         }
