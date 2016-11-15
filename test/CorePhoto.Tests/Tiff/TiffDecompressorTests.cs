@@ -30,7 +30,28 @@ namespace CorePhoto.Tests.Tiff
 
             var e = Assert.Throws<NotSupportedException>(() => { TiffDecompressor.DecompressStreamAsync(stream, 100, compression); });
 
-            Assert.Equal("The compression format '{compression}' is not supported.", e.Message);
+            Assert.Equal($"The compression format '{compression}' is not supported.", e.Message);
+        }
+
+        [Theory]
+        [InlineData(TiffCompression.None, true)]
+        [InlineData(TiffCompression.Ccitt1D, false)]
+        [InlineData(TiffCompression.PackBits, false)]
+        [InlineData(TiffCompression.CcittGroup3Fax, false)]
+        [InlineData(TiffCompression.CcittGroup4Fax, false)]
+        [InlineData(TiffCompression.Lzw, false)]
+        [InlineData(TiffCompression.OldJpeg, false)]
+        [InlineData(TiffCompression.Jpeg, false)]
+        [InlineData(TiffCompression.Deflate, false)]
+        [InlineData(TiffCompression.OldDeflate, false)]
+        [InlineData(TiffCompression.ItuTRecT43, false)]
+        [InlineData(TiffCompression.ItuTRecT82, false)]
+        [InlineData((TiffCompression)99, false)]
+        public void DecompressStreamAsync_ThrowsException_WithUnsupportedCompression(TiffCompression compression, bool expectedResult)
+        {
+            var supported = TiffDecompressor.SupportsCompression(compression);
+
+            Assert.Equal(expectedResult, supported);
         }
     }
 }

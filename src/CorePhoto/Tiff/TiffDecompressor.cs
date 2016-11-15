@@ -14,7 +14,18 @@ namespace CorePhoto.Tiff
                 case TiffCompression.None:
                     return DecompressStreamAsync_None(stream, length);
                 default:
-                    throw new NotSupportedException(@"The compression format '{compression}' is not supported.");
+                    throw new NotSupportedException($"The compression format '{compression}' is not supported.");
+            }
+        }
+
+        public static bool SupportsCompression(TiffCompression compression)
+        {
+            switch (compression)
+            {
+                case TiffCompression.None:
+                    return true;
+                default:
+                    return false;
             }
         }
 
