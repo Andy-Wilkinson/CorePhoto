@@ -16,6 +16,10 @@ namespace CorePhoto.Tiff
             return entry == null ? TiffCompression.None : (TiffCompression)entry.Value.GetInteger(byteOrder);
         }
 
+        public static uint? GetImageLength(this TiffIfd ifd, ByteOrder byteOrder) => GetInteger(ifd, TiffTags.ImageLength, byteOrder);
+
+        public static uint? GetImageWidth(this TiffIfd ifd, ByteOrder byteOrder) => GetInteger(ifd, TiffTags.ImageWidth, byteOrder);
+
         public static TiffNewSubfileType GetNewSubfileType(this TiffIfd ifd, ByteOrder byteOrder)
         {
             var entry = TiffReader.GetTiffIfdEntry(ifd, TiffTags.NewSubfileType);
@@ -29,6 +33,12 @@ namespace CorePhoto.Tiff
         }
 
         // Helper functions
+
+        private static uint? GetInteger(TiffIfd ifd, ushort tag, ByteOrder byteOrder)
+        {
+            var entry = TiffReader.GetTiffIfdEntry(ifd, tag);
+            return entry?.GetInteger(byteOrder);
+        }
 
         private static Task<string> ReadString(TiffIfd ifd, ushort tag, Stream stream, ByteOrder byteOrder)
         {

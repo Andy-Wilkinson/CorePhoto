@@ -48,22 +48,40 @@ namespace CorePhoto.Tests.Helpers
             switch (type)
             {
                 case TiffType.Byte:
-                    data = new byte[] { (byte)(int)value };
+                    if (value is int)
+                        data = new byte[] { (byte)(int)value };
+                    if (value is uint)
+                        data = new byte[] { (byte)(uint)value };
                     break;
                 case TiffType.Short:
-                    data = BitConverter.GetBytes((ushort)(int)value).WithByteOrder(byteOrder);
+                    if (value is int)
+                        data = BitConverter.GetBytes((ushort)(int)value).WithByteOrder(byteOrder);
+                    if (value is uint)
+                        data = BitConverter.GetBytes((ushort)(uint)value).WithByteOrder(byteOrder);
                     break;
                 case TiffType.Long:
-                    data = BitConverter.GetBytes((uint)(int)value).WithByteOrder(byteOrder);
+                    if (value is int)
+                        data = BitConverter.GetBytes((uint)(int)value).WithByteOrder(byteOrder);
+                    if (value is uint)
+                        data = BitConverter.GetBytes((uint)value).WithByteOrder(byteOrder);
                     break;
                 case TiffType.SByte:
-                    data = BitConverter.GetBytes((sbyte)(int)value);
+                    if (value is int)
+                        data = BitConverter.GetBytes((sbyte)(int)value);
+                    if (value is uint)
+                        data = BitConverter.GetBytes((sbyte)(uint)value);
                     break;
                 case TiffType.SShort:
-                    data = BitConverter.GetBytes((short)(int)value).WithByteOrder(byteOrder);
+                    if (value is int)
+                        data = BitConverter.GetBytes((short)(int)value).WithByteOrder(byteOrder);
+                    if (value is uint)
+                        data = BitConverter.GetBytes((short)(uint)value).WithByteOrder(byteOrder);
                     break;
                 case TiffType.SLong:
-                    data = BitConverter.GetBytes((int)value).WithByteOrder(byteOrder);
+                    if (value is int)
+                        data = BitConverter.GetBytes((int)value).WithByteOrder(byteOrder);
+                    if (value is uint)
+                        data = BitConverter.GetBytes((int)(uint)value).WithByteOrder(byteOrder);
                     break;
                 case TiffType.Ascii:
                     data = Encoding.ASCII.GetBytes((string)value);

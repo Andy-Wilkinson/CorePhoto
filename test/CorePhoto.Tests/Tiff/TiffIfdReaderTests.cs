@@ -14,8 +14,16 @@ namespace CorePhoto.Tests.Tiff
                                                              new object[] { ByteOrder.LittleEndian, TiffType.Ascii, null, null },
                                                              new object[] { ByteOrder.BigEndian, TiffType.Ascii, "\0", "" },
                                                              new object[] { ByteOrder.BigEndian, TiffType.Ascii, "Test Text\0", "Test Text" },
-                                                             new object[] { ByteOrder.LittleEndian, TiffType.Ascii, "First\0Second\0", "First\0Second" },
+                                                             new object[] { ByteOrder.BigEndian, TiffType.Ascii, "First\0Second\0", "First\0Second" },
                                                              new object[] { ByteOrder.BigEndian, TiffType.Ascii, null, null }};
+
+        public static object[][] SampleIntegerValues = new[] { new object[] { ByteOrder.LittleEndian, TiffType.Undefined, (uint?)null },
+                                                               new object[] { ByteOrder.LittleEndian, TiffType.Byte, (uint?)42 },
+                                                               new object[] { ByteOrder.LittleEndian, TiffType.Short, (uint?)3482 },
+                                                               new object[] { ByteOrder.LittleEndian, TiffType.Long, (uint?)96326 },
+                                                               new object[] { ByteOrder.BigEndian, TiffType.Byte, (uint?)42 },
+                                                               new object[] { ByteOrder.BigEndian, TiffType.Short, (uint?)3482 },
+                                                               new object[] { ByteOrder.BigEndian, TiffType.Long, (uint?)96326 }};
 
         [Theory]
         [MemberData(nameof(SampleAsciiValues))]
@@ -45,6 +53,28 @@ namespace CorePhoto.Tests.Tiff
             var result = ifd.GetCompression(byteOrder);
 
             Assert.Equal(expectedResult, result);
+        }
+
+        [Theory]
+        [MemberData(nameof(SampleIntegerValues))]
+        public void GetImageLength_ReturnsValue(ByteOrder byteOrder, TiffType type, uint? value)
+        {
+            var ifd = TiffHelper.GenerateTiffIfd(TiffTags.ImageLength, type, value, byteOrder);
+
+            var result = ifd.GetImageLength(byteOrder);
+
+            Assert.Equal(value, result);
+        }
+
+        [Theory]
+        [MemberData(nameof(SampleIntegerValues))]
+        public void GetImageWidth_ReturnsValue(ByteOrder byteOrder, TiffType type, uint? value)
+        {
+            var ifd = TiffHelper.GenerateTiffIfd(TiffTags.ImageWidth, type, value, byteOrder);
+
+            var result = ifd.GetImageWidth(byteOrder);
+
+            Assert.Equal(value, result);
         }
 
         [Theory]
