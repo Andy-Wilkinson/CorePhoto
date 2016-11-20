@@ -1,7 +1,5 @@
-using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using CorePhoto.IO;
 using CorePhoto.Tiff;
 
@@ -9,89 +7,6 @@ namespace CorePhoto.Tests.Helpers
 {
     public static class TiffHelper
     {
-        public static TiffIfd GenerateTiffIfd(ushort tag, TiffType type, object value, ByteOrder byteOrder)
-        {
-            return GenerateTiffIfdWithStream(tag, type, value, byteOrder).Ifd;
-        }
-
-        public static TiffIfd_Stream_Tuple GenerateTiffIfdWithStream(ushort tag, TiffType type, object value, ByteOrder byteOrder)
-        {
-            if (value == null)
-            {
-                var ifd = TiffHelper.GenerateTiffIfd();
-                var stream = new StreamBuilder(byteOrder).ToStream();
-                return new TiffIfd_Stream_Tuple(ifd, stream);
-            }
-            else
-            {
-                var ifdEntryTuple = TiffHelper.GenerateTiffIfdEntry(tag, type, value, byteOrder);
-                var ifd = TiffHelper.GenerateTiffIfd(ifdEntryTuple.Entry);
-                var stream = ifdEntryTuple.Stream;
-                return new TiffIfd_Stream_Tuple(ifd, stream);
-            }
-        }
-
-        public static TiffIfd GenerateTiffIfd(params TiffIfdEntry[] requiredEntries)
-        {
-            var preEntries = new[] { new TiffIfdEntry { Tag = 1 }, new TiffIfdEntry { Tag = 2 }, new TiffIfdEntry { Tag = 3 } };
-            var postEntries = new[] { new TiffIfdEntry { Tag = 4 }, new TiffIfdEntry { Tag = 5 }, new TiffIfdEntry { Tag = 6 } };
-            var entries = preEntries.Concat(requiredEntries).Concat(postEntries).ToArray();
-
-            return new TiffIfd { Entries = entries };
-        }
-
-        public static TiffIfdEntry_Stream_Tuple GenerateTiffIfdEntry(ushort tag, TiffType type, object value, ByteOrder byteOrder)
-        {
-            byte[] data = new byte[0];
-            int count = 1;
-
-            switch (type)
-            {
-                case TiffType.Byte:
-                    if (value is int)
-                        data = new byte[] { (byte)(int)value };
-                    if (value is uint)
-                        data = new byte[] { (byte)(uint)value };
-                    break;
-                case TiffType.Short:
-                    if (value is int)
-                        data = BitConverter.GetBytes((ushort)(int)value).WithByteOrder(byteOrder);
-                    if (value is uint)
-                        data = BitConverter.GetBytes((ushort)(uint)value).WithByteOrder(byteOrder);
-                    break;
-                case TiffType.Long:
-                    if (value is int)
-                        data = BitConverter.GetBytes((uint)(int)value).WithByteOrder(byteOrder);
-                    if (value is uint)
-                        data = BitConverter.GetBytes((uint)value).WithByteOrder(byteOrder);
-                    break;
-                case TiffType.SByte:
-                    if (value is int)
-                        data = BitConverter.GetBytes((sbyte)(int)value);
-                    if (value is uint)
-                        data = BitConverter.GetBytes((sbyte)(uint)value);
-                    break;
-                case TiffType.SShort:
-                    if (value is int)
-                        data = BitConverter.GetBytes((short)(int)value).WithByteOrder(byteOrder);
-                    if (value is uint)
-                        data = BitConverter.GetBytes((short)(uint)value).WithByteOrder(byteOrder);
-                    break;
-                case TiffType.SLong:
-                    if (value is int)
-                        data = BitConverter.GetBytes((int)value).WithByteOrder(byteOrder);
-                    if (value is uint)
-                        data = BitConverter.GetBytes((int)(uint)value).WithByteOrder(byteOrder);
-                    break;
-                case TiffType.Ascii:
-                    data = Encoding.ASCII.GetBytes((string)value);
-                    count = data.Length;
-                    break;
-            }
-
-            return GenerateTiffIfdEntry(tag, type, data, 6, byteOrder, count);
-        }
-
         public static TiffIfdEntry_Stream_Tuple GenerateTiffIfdEntry(TiffType type, byte[] data, byte paddingByteCount, ByteOrder byteOrder)
         {
             var count = data.Length / TiffReader.SizeOfDataType(type);
@@ -128,10 +43,10 @@ namespace CorePhoto.Tests.Helpers
             return new TiffIfdEntry_Stream_Tuple(entry, stream);
         }
 
-        public static TiffIfdEntry GenerateTiffIfdEntry(ushort tag, uint value, ByteOrder byteOrder)
-        {
-            return GenerateTiffIfdEntry(tag, TiffType.Long, value, byteOrder);
-        }
+        // public static TiffIfdEntry GenerateTiffIfdEntry(ushort tag, uint value, ByteOrder byteOrder)
+        // {
+        //     return GenerateTiffIfdEntry(tag, TiffType.Long, value, byteOrder);
+        // }
 
         public static TiffIfdEntry GenerateTiffIfdEntry(ushort tag, TiffType type, uint value, ByteOrder byteOrder)
         {

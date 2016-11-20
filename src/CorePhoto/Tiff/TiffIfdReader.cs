@@ -8,7 +8,7 @@ namespace CorePhoto.Tiff
     {
         // Baseline TIFF fields
 
-        public static Task<string> ReadArtist(this TiffIfd ifd, Stream stream, ByteOrder byteOrder) => ReadString(ifd, TiffTags.Artist, stream, byteOrder);
+        public static Task<string> ReadArtist(this TiffIfd ifd, Stream stream, ByteOrder byteOrder) => ReadStringAsync(ifd, TiffTags.Artist, stream, byteOrder);
 
         public static TiffCompression GetCompression(this TiffIfd ifd, ByteOrder byteOrder)
         {
@@ -40,7 +40,7 @@ namespace CorePhoto.Tiff
             return entry?.GetInteger(byteOrder);
         }
 
-        private static Task<string> ReadString(TiffIfd ifd, ushort tag, Stream stream, ByteOrder byteOrder)
+        private static Task<string> ReadStringAsync(TiffIfd ifd, ushort tag, Stream stream, ByteOrder byteOrder)
         {
             var entry = TiffReader.GetTiffIfdEntry(ifd, tag);
 

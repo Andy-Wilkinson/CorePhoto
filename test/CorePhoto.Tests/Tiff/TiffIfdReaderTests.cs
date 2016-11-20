@@ -29,7 +29,7 @@ namespace CorePhoto.Tests.Tiff
         [MemberData(nameof(SampleAsciiValues))]
         public async Task ReadArtist_ReturnsValue(ByteOrder byteOrder, TiffType type, string data, string expectedResult)
         {
-            var ifdStreamTuple = TiffHelper.GenerateTiffIfdWithStream(TiffTags.Artist, type, data, byteOrder);
+            var ifdStreamTuple = TiffIfdBuilder.GenerateIfd(TiffTags.Artist, type, data, byteOrder);
             var ifd = ifdStreamTuple.Ifd;
             var stream = ifdStreamTuple.Stream;
 
@@ -46,9 +46,9 @@ namespace CorePhoto.Tests.Tiff
         [InlineData(ByteOrder.BigEndian, TiffType.Short, 1, TiffCompression.None)]
         [InlineData(ByteOrder.BigEndian, TiffType.Short, 32773, TiffCompression.PackBits)]
         [InlineData(ByteOrder.BigEndian, TiffType.Short, 99, (TiffCompression)99)]
-        public void GetCompression_ReturnsValue(ByteOrder byteOrder, TiffType type, object data, TiffCompression expectedResult)
+        public void GetCompression_ReturnsValue(ByteOrder byteOrder, TiffType type, int? data, TiffCompression expectedResult)
         {
-            var ifd = TiffHelper.GenerateTiffIfd(TiffTags.Compression, type, data, byteOrder);
+            var ifd = TiffIfdBuilder.GenerateIfd(TiffTags.Compression, type, data, byteOrder).Ifd;
 
             var result = ifd.GetCompression(byteOrder);
 
@@ -59,7 +59,7 @@ namespace CorePhoto.Tests.Tiff
         [MemberData(nameof(SampleIntegerValues))]
         public void GetImageLength_ReturnsValue(ByteOrder byteOrder, TiffType type, uint? value)
         {
-            var ifd = TiffHelper.GenerateTiffIfd(TiffTags.ImageLength, type, value, byteOrder);
+            var ifd = TiffIfdBuilder.GenerateIfd(TiffTags.ImageLength, type, value, byteOrder).Ifd;
 
             var result = ifd.GetImageLength(byteOrder);
 
@@ -70,7 +70,7 @@ namespace CorePhoto.Tests.Tiff
         [MemberData(nameof(SampleIntegerValues))]
         public void GetImageWidth_ReturnsValue(ByteOrder byteOrder, TiffType type, uint? value)
         {
-            var ifd = TiffHelper.GenerateTiffIfd(TiffTags.ImageWidth, type, value, byteOrder);
+            var ifd = TiffIfdBuilder.GenerateIfd(TiffTags.ImageWidth, type, value, byteOrder).Ifd;
 
             var result = ifd.GetImageWidth(byteOrder);
 
@@ -87,9 +87,9 @@ namespace CorePhoto.Tests.Tiff
         [InlineData(ByteOrder.BigEndian, TiffType.Short, 2, TiffNewSubfileType.SinglePage)]
         [InlineData(ByteOrder.BigEndian, TiffType.Short, 3, TiffNewSubfileType.SinglePage | TiffNewSubfileType.Preview)]
         [InlineData(ByteOrder.BigEndian, TiffType.Short, 99, (TiffNewSubfileType)99)]
-        public void GetNewSubfileType_ReturnsValue(ByteOrder byteOrder, TiffType type, object data, TiffNewSubfileType expectedResult)
+        public void GetNewSubfileType_ReturnsValue(ByteOrder byteOrder, TiffType type, int? data, TiffNewSubfileType expectedResult)
         {
-            var ifd = TiffHelper.GenerateTiffIfd(TiffTags.NewSubfileType, type, data, byteOrder);
+            var ifd = TiffIfdBuilder.GenerateIfd(TiffTags.NewSubfileType, type, data, byteOrder).Ifd;
 
             var result = ifd.GetNewSubfileType(byteOrder);
 
@@ -104,9 +104,9 @@ namespace CorePhoto.Tests.Tiff
         [InlineData(ByteOrder.BigEndian, TiffType.Short, 1, TiffPhotometricInterpretation.BlackIsZero)]
         [InlineData(ByteOrder.BigEndian, TiffType.Short, 34892, TiffPhotometricInterpretation.LinearRaw)]
         [InlineData(ByteOrder.BigEndian, TiffType.Short, 99, (TiffPhotometricInterpretation)99)]
-        public void GetPhotometricInterpretation_ReturnsValue(ByteOrder byteOrder, TiffType type, object data, TiffPhotometricInterpretation? expectedResult)
+        public void GetPhotometricInterpretation_ReturnsValue(ByteOrder byteOrder, TiffType type, int? data, TiffPhotometricInterpretation? expectedResult)
         {
-            var ifd = TiffHelper.GenerateTiffIfd(TiffTags.PhotometricInterpretation, type, data, byteOrder);
+            var ifd = TiffIfdBuilder.GenerateIfd(TiffTags.PhotometricInterpretation, type, data, byteOrder).Ifd;
 
             var result = ifd.GetPhotometricInterpretation(byteOrder);
 
