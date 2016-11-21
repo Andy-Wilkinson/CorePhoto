@@ -25,6 +25,28 @@ namespace CorePhoto.Tests.Tiff
                                                                new object[] { ByteOrder.BigEndian, TiffType.Short, (uint?)3482 },
                                                                new object[] { ByteOrder.BigEndian, TiffType.Long, (uint?)96326 }};
 
+        public static object[][] SampleIntegerArrayValues = new[] { new object[] { ByteOrder.LittleEndian, TiffType.Undefined, null },
+                                                               new object[] { ByteOrder.LittleEndian, TiffType.Byte, new uint[] { 42 } },
+                                                               new object[] { ByteOrder.LittleEndian, TiffType.Byte, new uint[] { 41, 96 } },
+                                                               new object[] { ByteOrder.LittleEndian, TiffType.Byte, new uint[] { 35, 91, 17 } },
+                                                               new object[] { ByteOrder.LittleEndian, TiffType.Byte, new uint[] { 18, 91, 17, 24 } },
+                                                               new object[] { ByteOrder.LittleEndian, TiffType.Byte, new uint[] { 28, 12, 63, 85, 13 } },
+                                                               new object[] { ByteOrder.LittleEndian, TiffType.Short, new uint[] { 3482 } },
+                                                               new object[] { ByteOrder.LittleEndian, TiffType.Short, new uint[] { 1452, 2852 } },
+                                                               new object[] { ByteOrder.LittleEndian, TiffType.Short, new uint[] { 3452, 7934, 1853 } },
+                                                               new object[] { ByteOrder.LittleEndian, TiffType.Long, new uint[] { 96326 } },
+                                                               new object[] { ByteOrder.LittleEndian, TiffType.Long, new uint[] { 26894, 68395 } },
+                                                               new object[] { ByteOrder.BigEndian, TiffType.Byte, new uint[] { 42 } },
+                                                               new object[] { ByteOrder.BigEndian, TiffType.Byte, new uint[] { 41, 96 } },
+                                                               new object[] { ByteOrder.BigEndian, TiffType.Byte, new uint[] { 35, 91, 17 } },
+                                                               new object[] { ByteOrder.BigEndian, TiffType.Byte, new uint[] { 18, 91, 17, 24 } },
+                                                               new object[] { ByteOrder.BigEndian, TiffType.Byte, new uint[] { 28, 12, 63, 85, 13 } },
+                                                               new object[] { ByteOrder.BigEndian, TiffType.Short, new uint[] { 3482 } },
+                                                               new object[] { ByteOrder.BigEndian, TiffType.Short, new uint[] { 1452, 2852 } },
+                                                               new object[] { ByteOrder.BigEndian, TiffType.Short, new uint[] { 3452, 7934, 1853 } },
+                                                               new object[] { ByteOrder.BigEndian, TiffType.Long, new uint[] { 96326 } },
+                                                               new object[] { ByteOrder.BigEndian, TiffType.Long, new uint[] { 26894, 68395 } }};
+
         [Theory]
         [MemberData(nameof(SampleAsciiValues))]
         public async Task ReadArtist_ReturnsValue(ByteOrder byteOrder, TiffType type, string data, string expectedResult)
@@ -111,6 +133,34 @@ namespace CorePhoto.Tests.Tiff
             var result = ifd.GetPhotometricInterpretation(byteOrder);
 
             Assert.Equal(expectedResult, result);
+        }
+
+        [Theory]
+        [MemberData(nameof(SampleIntegerArrayValues))]
+        public async Task ReadStripByteCountsAsync_ReturnsValue(ByteOrder byteOrder, TiffType type, uint[] value)
+        {
+            var ifdStreamTuple = TiffIfdBuilder.GenerateIfd(TiffTags.StripByteCounts, type, value, byteOrder);
+
+            var ifd = ifdStreamTuple.Ifd;
+            var stream = ifdStreamTuple.Stream;
+
+            var result = await ifd.ReadStripByteCountsAsync(stream, byteOrder);
+
+            Assert.Equal(value, result);
+        }
+
+        [Theory]
+        [MemberData(nameof(SampleIntegerArrayValues))]
+        public async Task ReadStripOffsetsAsync_ReturnsValue(ByteOrder byteOrder, TiffType type, uint[] value)
+        {
+            var ifdStreamTuple = TiffIfdBuilder.GenerateIfd(TiffTags.StripOffsets, type, value, byteOrder);
+
+            var ifd = ifdStreamTuple.Ifd;
+            var stream = ifdStreamTuple.Stream;
+
+            var result = await ifd.ReadStripOffsetsAsync(stream, byteOrder);
+
+            Assert.Equal(value, result);
         }
     }
 }
