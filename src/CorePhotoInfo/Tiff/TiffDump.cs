@@ -8,6 +8,8 @@ using CorePhoto.Tiff;
 using CorePhotoInfo.Reporting;
 using System.Collections.Generic;
 using CorePhoto.Dng;
+using System;
+using ImageSharp;
 
 namespace CorePhotoInfo.Tiff
 {
@@ -15,13 +17,15 @@ namespace CorePhotoInfo.Tiff
     {
         private Stream _stream;
         private IReportWriter _report;
+        private DirectoryInfo _outputDirectory;
         private Dictionary<int, string> _tagDictionary = new Dictionary<int, string>();
         private Dictionary<int, string> _exifTagDictionary = new Dictionary<int, string>();
 
-        private TiffDump(Stream stream, IReportWriter reportWriter)
+        private TiffDump(Stream stream, IReportWriter reportWriter, DirectoryInfo outputDirectory)
         {
             _stream = stream;
             _report = reportWriter;
+            _outputDirectory = outputDirectory;
         }
 
         private async Task WriteTiffInfoAsync()
@@ -42,6 +46,10 @@ namespace CorePhotoInfo.Tiff
             // Write the IFD dump
 
             await WriteTiffIfdEntriesAsync(ifd, byteOrder, tagDictionary);
+
+            // Decode the image
+
+            await DecodeImage(ifd, byteOrder, $"{ifdPrefix}{ifdId}");
 
             // Write the EXIF IFD
 
@@ -84,6 +92,9 @@ namespace CorePhotoInfo.Tiff
             var typeStr = entry.Count == 1 ? $"{entry.Type}" : $"{entry.Type}[{entry.Count}]";
             object value = await GetTiffIfdValueAsync(ifd, entry, byteOrder);
 
+            if (value is Array)
+                value = ConvertArrayToString((Array)value);
+
             _report.WriteLine($"{tagStr} = {value}");
         }
 
@@ -95,10 +106,18 @@ namespace CorePhotoInfo.Tiff
                     return ifd.ReadArtist(_stream, byteOrder);
                 case TiffTags.Compression:
                     return ifd.GetCompression(byteOrder);
+                case TiffTags.ImageLength:
+                    return ifd.GetImageLength(byteOrder);
+                case TiffTags.ImageWidth:
+                    return ifd.GetImageWidth(byteOrder);
                 case TiffTags.NewSubfileType:
                     return ifd.GetNewSubfileType(byteOrder);
                 case TiffTags.PhotometricInterpretation:
                     return ifd.GetPhotometricInterpretation(byteOrder);
+                case TiffTags.StripByteCounts:
+                    return await ifd.ReadStripByteCountsAsync(_stream, byteOrder);
+                case TiffTags.StripOffsets:
+                    return await ifd.ReadStripOffsetsAsync(_stream, byteOrder);
                 default:
                     return await GetTiffIfdEntryDataAsync(entry, byteOrder);
             }
@@ -169,10 +188,87 @@ namespace CorePhotoInfo.Tiff
             }
         }
 
+        private async Task DecodeImage(TiffIfd ifd, ByteOrder byteOrder, string imageName)
+        {
+            var compression = ifd.GetCompression(byteOrder);
+            var photometricInterpretation = ifd.GetPhotometricInterpretation(byteOrder);
+            var imageWidth = ifd.GetImageWidth(byteOrder);
+            var imageLength = ifd.GetImageLength(byteOrder);
+
+            if (!TiffDecompressor.SupportsCompression(compression))
+            {
+                _report.WriteError($"Image compression format {compression} is not supported.");
+                return;
+            }
+            else if (photometricInterpretation != TiffPhotometricInterpretation.Rgb)
+            {
+                _report.WriteError($"Photometric interpretation {photometricInterpretation} is not supported.");
+                return;
+            }
+            else
+            {
+                var stripOffsets = await ifd.ReadStripOffsetsAsync(_stream, byteOrder);
+                var stripByteCounts = await ifd.ReadStripByteCountsAsync(_stream, byteOrder);
+                var width = (int)imageWidth.Value;
+                var height = (int)imageLength.Value;
+                var bytesPerRow = width * 3;
+
+                if (stripOffsets != null && stripByteCounts != null)
+                {
+                    var image = new Image(width, height);
+
+                    for (int stripIndex = 0; stripIndex < stripOffsets.Length; stripIndex++)
+                    {
+                        _stream.Seek(stripOffsets[stripIndex], SeekOrigin.Begin);
+                        var stripLength = (int)stripByteCounts[stripIndex];
+                        var data = await TiffDecompressor.DecompressStreamAsync(_stream, stripLength, compression);
+
+                        using (var pixels = image.Lock())
+                        {
+                            for (int i = 0; i < data.Length; i += 3)
+                            {
+                                int x = i % bytesPerRow / 3;
+                                int y = i / bytesPerRow;
+                                Color color = default(Color);
+                                color.PackFromBytes(data[i], data[i + 1], data[i + 2], 255);
+                                pixels[x, y] = color;
+                            }
+                        }
+                    }
+
+                    var filename = Path.Combine(_outputDirectory.FullName, imageName + ".png");
+
+                    using (FileStream outputStream = File.OpenWrite(filename))
+                    {
+                        image.Save(outputStream);
+                    }
+
+                    _report.WriteImage(new FileInfo(filename));
+                }
+            }
+        }
+
         private string ConvertArrayToString<T>(T[] array)
         {
             var maxArraySize = 10;
             var truncatedArray = array.Take(maxArraySize).Select(i => i.ToString());
+            var arrayString = string.Join(", ", truncatedArray);
+            var continuationString = array.Length > maxArraySize ? ", ..." : "";
+
+            return $"[{arrayString}{continuationString}]";
+        }
+
+        private string ConvertArrayToString(Array array)
+        {
+            var maxArraySize = 10;
+            var itemsToDisplay = Math.Min(array.Length, maxArraySize);
+            var truncatedArray = new string[itemsToDisplay];
+
+            for (int i = 0; i < itemsToDisplay; i++)
+            {
+                truncatedArray[i] = array.GetValue(i).ToString();
+            }
+
             var arrayString = string.Join(", ", truncatedArray);
             var continuationString = array.Length > maxArraySize ? ", ..." : "";
 
@@ -205,9 +301,9 @@ namespace CorePhotoInfo.Tiff
             }
         }
 
-        public static void WriteTiffInfo(Stream stream, IReportWriter reportWriter)
+        public static void WriteTiffInfo(Stream stream, IReportWriter reportWriter, DirectoryInfo outputDirectory)
         {
-            TiffDump instance = new TiffDump(stream, reportWriter);
+            TiffDump instance = new TiffDump(stream, reportWriter, outputDirectory);
 
             instance.PopulateTagDictionary<TiffTags>(instance._tagDictionary);
             instance.PopulateTagDictionary<DngTags>(instance._tagDictionary);

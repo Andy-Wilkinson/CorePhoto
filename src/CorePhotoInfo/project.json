@@ -12,7 +12,8 @@
           "type": "platform",
           "version": "1.0.1"
         },
-        "CorePhoto": "1.0.0-*"
+        "CorePhoto": "1.0.0-*",
+        "ImageSharp": "1.0.0-alpha-000077"
       },
       "imports": "dnxcore50"
     }

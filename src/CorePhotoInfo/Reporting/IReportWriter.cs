@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace CorePhotoInfo.Reporting
 {
     public interface IReportWriter
@@ -6,5 +8,6 @@ namespace CorePhotoInfo.Reporting
         void WriteSubheader(string format, params object[] arg);
         void WriteLine(string format, params object[] arg);
         void WriteError(string format, params object[] arg);
+        void WriteImage(FileInfo imageFile);
     }
 }

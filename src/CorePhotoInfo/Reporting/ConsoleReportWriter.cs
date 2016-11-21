@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace CorePhotoInfo.Reporting
 {
@@ -7,6 +8,7 @@ namespace CorePhotoInfo.Reporting
         private static ConsoleColor ErrorColor = ConsoleColor.Red;
         private static ConsoleColor HeaderColor = ConsoleColor.DarkRed;
         private static ConsoleColor SubheaderColor = ConsoleColor.Yellow;
+        private static ConsoleColor ImageColor = ConsoleColor.Green;
 
         public void WriteHeader(string format, params object[] arg)
         {
@@ -41,6 +43,13 @@ namespace CorePhotoInfo.Reporting
             Console.ForegroundColor = color;
             Console.WriteLine(str);
             Console.WriteLine(underlineStr);
+            Console.ResetColor();
+        }
+
+        public void WriteImage(FileInfo imageFile)
+        {
+            Console.ForegroundColor = ImageColor;
+            Console.WriteLine($"Output Image '{imageFile.Name}'");
             Console.ResetColor();
         }
     }
