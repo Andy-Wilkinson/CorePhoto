@@ -6,11 +6,11 @@
   },
   "dependencies": {},
   "frameworks": {
-    "netcoreapp1.0": {
+    "netcoreapp1.1": {
       "dependencies": {
         "Microsoft.NETCore.App": {
           "type": "platform",
-          "version": "1.0.1"
+          "version": "1.1.0"
         },
         "CorePhoto": "1.0.0-*",
         "ImageSharp": "1.0.0-alpha-000077"

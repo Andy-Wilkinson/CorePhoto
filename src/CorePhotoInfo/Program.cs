@@ -18,7 +18,7 @@ namespace CorePhotoInfo
                 return;
             }
 
-            DirectoryInfo outputDirectory = new DirectoryInfo(Path.Combine(fileInfo.Directory.FullName, "CoreInfo_" + fileInfo.Name));
+            DirectoryInfo outputDirectory = new DirectoryInfo(Path.Combine(fileInfo.Directory.FullName, "CorePhotoInfo_" + fileInfo.Name));
             CreateOrCleanDirectory(outputDirectory);
 
             IReportWriter report = new ConsoleReportWriter();
