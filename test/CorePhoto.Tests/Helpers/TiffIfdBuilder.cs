@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using CorePhoto.IO;
 using CorePhoto.Tiff;
+using CorePhoto.Numerics;
 
 namespace CorePhoto.Tests.Helpers
 {
@@ -56,6 +57,18 @@ namespace CorePhoto.Tests.Helpers
             {
                 var data = value.SelectMany(v => ConvertToBytes(type, v)).ToArray();
                 _entries.Add(new TiffIfdEntryInfo(tag, type, value.Length, data));
+            }
+
+            return this;
+        }
+
+        public TiffIfdBuilder WithIfdEntry(ushort tag, TiffType type, Rational? value)
+        {
+            if (value != null)
+            {
+                var rational = value.Value;
+                var data = new[] {rational.Numerator, rational.Denominator}.SelectMany(v => ConvertToBytes(TiffType.Long, v)).ToArray();
+                _entries.Add(new TiffIfdEntryInfo(tag, type, 1, data));
             }
 
             return this;
@@ -131,6 +144,11 @@ namespace CorePhoto.Tests.Helpers
         }
 
         public static TiffHelper.TiffIfd_Stream_Tuple GenerateIfd(ushort tag, TiffType type, uint[] value, ByteOrder byteOrder)
+        {
+            return new TiffIfdBuilder(byteOrder).WithIfdEntry(tag, type, value).ToIfdStreamTuple();
+        }
+
+        public static TiffHelper.TiffIfd_Stream_Tuple GenerateIfd(ushort tag, TiffType type, Rational? value, ByteOrder byteOrder)
         {
             return new TiffIfdBuilder(byteOrder).WithIfdEntry(tag, type, value).ToIfdStreamTuple();
         }

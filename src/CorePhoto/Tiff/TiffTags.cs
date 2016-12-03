@@ -31,7 +31,7 @@ namespace CorePhoto.Tiff
         public const int NewSubfileType = 254;
         public const int Orientation = 274;
         public const int PhotometricInterpretation = 262;
-        public const int PlanarConfiguraion = 284;
+        public const int PlanarConfiguration = 284;
         public const int ResolutionUnit = 296;
         public const int RowsPerStrip = 278;
         public const int SamplesPerPixel = 277;
