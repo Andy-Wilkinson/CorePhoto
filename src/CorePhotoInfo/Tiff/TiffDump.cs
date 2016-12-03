@@ -105,49 +105,49 @@ namespace CorePhotoInfo.Tiff
                 // Baseline TIFF fields
 
                 case TiffTags.Artist:
-                    return ifd.ReadArtistAsync(_stream, byteOrder);
+                    return await ifd.ReadArtistAsync(_stream, byteOrder);
                 case TiffTags.BitsPerSample:
-                    return ifd.ReadBitsPerSampleAsync(_stream, byteOrder);
+                    return await ifd.ReadBitsPerSampleAsync(_stream, byteOrder);
                 case TiffTags.CellLength:
                     return ifd.GetCellLength(byteOrder);
                 case TiffTags.CellWidth:
                     return ifd.GetCellWidth(byteOrder);
                 case TiffTags.ColorMap:
-                    return ifd.ReadColorMapAsync(_stream, byteOrder);
+                    return await ifd.ReadColorMapAsync(_stream, byteOrder);
                 case TiffTags.Compression:
                     return ifd.GetCompression(byteOrder);
                 case TiffTags.Copyright:
-                    return ifd.ReadCopyrightAsync(_stream, byteOrder);
+                    return await ifd.ReadCopyrightAsync(_stream, byteOrder);
                 case TiffTags.DateTime:
-                    return ifd.ReadDateTimeAsync(_stream, byteOrder);
+                    return await ifd.ReadDateTimeAsync(_stream, byteOrder);
                 case TiffTags.ExtraSamples:
-                    return ifd.ReadExtraSamplesAsync(_stream, byteOrder);
+                    return await ifd.ReadExtraSamplesAsync(_stream, byteOrder);
                 case TiffTags.FillOrder:
                     return ifd.GetFillOrder(byteOrder);
                 case TiffTags.FreeByteCounts:
-                    return ifd.ReadFreeByteCountsAsync(_stream, byteOrder);
+                    return await ifd.ReadFreeByteCountsAsync(_stream, byteOrder);
                 case TiffTags.FreeOffsets:
-                    return ifd.ReadFreeOffsetsAsync(_stream, byteOrder);
+                    return await ifd.ReadFreeOffsetsAsync(_stream, byteOrder);
                 case TiffTags.GrayResponseCurve:
-                    return ifd.ReadGrayResponseCurveAsync(_stream, byteOrder);
+                    return await ifd.ReadGrayResponseCurveAsync(_stream, byteOrder);
                 case TiffTags.GrayResponseUnit:
                     return ifd.GetGrayResponseUnit(byteOrder);
                 case TiffTags.HostComputer:
-                    return ifd.ReadHostComputerAsync(_stream, byteOrder);
+                    return await ifd.ReadHostComputerAsync(_stream, byteOrder);
                 case TiffTags.ImageDescription:
-                    return ifd.ReadImageDescriptionAsync(_stream, byteOrder);
+                    return await ifd.ReadImageDescriptionAsync(_stream, byteOrder);
                 case TiffTags.ImageLength:
                     return ifd.GetImageLength(byteOrder);
                 case TiffTags.ImageWidth:
                     return ifd.GetImageWidth(byteOrder);
                 case TiffTags.Make:
-                    return ifd.ReadMakeAsync(_stream, byteOrder);
+                    return await ifd.ReadMakeAsync(_stream, byteOrder);
                 case TiffTags.MaxSampleValue:
-                    return ifd.ReadMaxSampleValueAsync(_stream, byteOrder);
+                    return await ifd.ReadMaxSampleValueAsync(_stream, byteOrder);
                 case TiffTags.MinSampleValue:
-                    return ifd.ReadMinSampleValueAsync(_stream, byteOrder);
+                    return await ifd.ReadMinSampleValueAsync(_stream, byteOrder);
                 case TiffTags.Model:
-                    return ifd.ReadModelAsync(_stream, byteOrder);
+                    return await ifd.ReadModelAsync(_stream, byteOrder);
                 case TiffTags.NewSubfileType:
                     return ifd.GetNewSubfileType(byteOrder);
                 case TiffTags.Orientation:
@@ -180,7 +180,7 @@ namespace CorePhotoInfo.Tiff
                 // Unknown fields
 
                 default:
-                    return await GetTiffIfdEntryDataAsync(entry, byteOrder);
+                    return "* " + await GetTiffIfdEntryDataAsync(entry, byteOrder);
             }
         }
 
