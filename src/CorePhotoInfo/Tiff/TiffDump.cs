@@ -163,7 +163,7 @@ namespace CorePhotoInfo.Tiff
                 case TiffTags.SamplesPerPixel:
                     return ifd.GetSamplesPerPixel(byteOrder);
                 case TiffTags.Software:
-                    return await ifd.ReadSoftwareAsync(_stream, byteOrder);  
+                    return await ifd.ReadSoftwareAsync(_stream, byteOrder);
                 case TiffTags.StripByteCounts:
                     return await ifd.ReadStripByteCountsAsync(_stream, byteOrder);
                 case TiffTags.StripOffsets:
@@ -270,6 +270,7 @@ namespace CorePhotoInfo.Tiff
             {
                 var stripOffsets = await ifd.ReadStripOffsetsAsync(_stream, byteOrder);
                 var stripByteCounts = await ifd.ReadStripByteCountsAsync(_stream, byteOrder);
+                var rowsPerStrip = ifd.GetRowsPerStrip(byteOrder);
                 var width = (int)imageWidth.Value;
                 var height = (int)imageLength.Value;
                 var bytesPerRow = width * 3;
@@ -280,9 +281,11 @@ namespace CorePhotoInfo.Tiff
 
                     for (int stripIndex = 0; stripIndex < stripOffsets.Length; stripIndex++)
                     {
+                        var sizeOfStrip = (int)rowsPerStrip * bytesPerRow;
+
                         _stream.Seek(stripOffsets[stripIndex], SeekOrigin.Begin);
                         var stripLength = (int)stripByteCounts[stripIndex];
-                        var data = await TiffDecompressor.DecompressStreamAsync(_stream, stripLength, compression);
+                        var data = await TiffDecompressor.DecompressStreamAsync(_stream, compression, stripLength, sizeOfStrip);
 
                         using (var pixels = image.Lock())
                         {
