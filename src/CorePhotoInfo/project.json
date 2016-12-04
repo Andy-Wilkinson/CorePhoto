@@ -13,7 +13,7 @@
           "version": "1.1.0"
         },
         "CorePhoto": "1.0.0-*",
-        "ImageSharp": "1.0.0-alpha-000077"
+        "ImageSharp": "1.0.0-alpha-000110"
       },
       "imports": "dnxcore50"
     }
