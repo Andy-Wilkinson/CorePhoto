@@ -77,7 +77,7 @@ namespace CorePhoto.Tests.Tiff
         [InlineData(TiffCompression.ItuTRecT43, false)]
         [InlineData(TiffCompression.ItuTRecT82, false)]
         [InlineData((TiffCompression)99, false)]
-        public void DecompressStreamAsync_ThrowsException_WithUnsupportedCompression(TiffCompression compression, bool expectedResult)
+        public void SupportsCompression_ReturnsCorrectValue(TiffCompression compression, bool expectedResult)
         {
             var supported = TiffDecompressor.SupportsCompression(compression);
 
