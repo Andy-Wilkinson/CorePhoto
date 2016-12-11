@@ -261,7 +261,12 @@ namespace CorePhotoInfo.Tiff
                 _report.WriteError($"Image compression format {compression} is not supported.");
                 return;
             }
-            else if (photometricInterpretation != TiffPhotometricInterpretation.Rgb)
+            else if (photometricInterpretation == null)
+            {
+                _report.WriteError($"Photometric interpretation is missing.");
+                return;
+            }
+            else if (!TiffImageReader.SupportsPhotometricInterpretation(photometricInterpretation.Value))
             {
                 _report.WriteError($"Photometric interpretation {photometricInterpretation} is not supported.");
                 return;
@@ -270,10 +275,12 @@ namespace CorePhotoInfo.Tiff
             {
                 var stripOffsets = await ifd.ReadStripOffsetsAsync(_stream, byteOrder);
                 var stripByteCounts = await ifd.ReadStripByteCountsAsync(_stream, byteOrder);
-                var rowsPerStrip = ifd.GetRowsPerStrip(byteOrder);
+                var rowsPerStrip = (int)ifd.GetRowsPerStrip(byteOrder);
                 var width = (int)imageWidth.Value;
                 var height = (int)imageLength.Value;
                 var bytesPerRow = width * 3;
+                var samplesPerPixel = (int)ifd.GetSamplesPerPixel(byteOrder);
+                var imageDecoder = await TiffImageReader.GetImageDecoderAsync(ifd, _stream, byteOrder);
 
                 if (stripOffsets != null && stripByteCounts != null)
                 {
@@ -289,14 +296,7 @@ namespace CorePhotoInfo.Tiff
 
                         using (var pixels = image.Lock())
                         {
-                            for (int i = 0; i < data.Length; i += 3)
-                            {
-                                int x = i % bytesPerRow / 3;
-                                int y = i / bytesPerRow;
-                                Color color = default(Color);
-                                color.PackFromBytes(data[i], data[i + 1], data[i + 2], 255);
-                                pixels[x, y] = color;
-                            }
+                            imageDecoder(data, pixels, new Rectangle(0, stripIndex * rowsPerStrip, width, rowsPerStrip));
                         }
                     }
 
