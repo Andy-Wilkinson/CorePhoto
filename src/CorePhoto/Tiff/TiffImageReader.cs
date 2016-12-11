@@ -14,6 +14,22 @@ namespace CorePhoto.Tiff
 
             switch (photometricInterpretation)
             {
+                case TiffPhotometricInterpretation.WhiteIsZero:
+                    {
+                        var bitsPerSample = await ifd.ReadBitsPerSampleAsync(stream, byteOrder);
+
+                        if (bitsPerSample.Length >= 1 && bitsPerSample[0] == 8)
+                            return (imageData, pixels, destination) => DecodeImageData_Grayscale_8(imageData, pixels, destination, true);
+                    }
+                    break;
+                case TiffPhotometricInterpretation.BlackIsZero:
+                    {
+                        var bitsPerSample = await ifd.ReadBitsPerSampleAsync(stream, byteOrder);
+
+                        if (bitsPerSample.Length >= 1 && bitsPerSample[0] == 8)
+                            return (imageData, pixels, destination) => DecodeImageData_Grayscale_8(imageData, pixels, destination, false);
+                    }
+                    break;
                 case TiffPhotometricInterpretation.Rgb:
                     {
                         var samplesPerPixel = (int)ifd.GetSamplesPerPixel(byteOrder);
@@ -34,6 +50,8 @@ namespace CorePhoto.Tiff
         {
             switch (photometricInterpretation)
             {
+                case TiffPhotometricInterpretation.WhiteIsZero:
+                case TiffPhotometricInterpretation.BlackIsZero:
                 case TiffPhotometricInterpretation.Rgb:
                     return true;
                 default:
@@ -58,6 +76,25 @@ namespace CorePhoto.Tiff
 
                     pixels[x + destination.Left, y + destination.Top] = color;
                     offset += bytesPerPixel;
+                }
+            }
+        }
+
+        private static void DecodeImageData_Grayscale_8(byte[] imageData, PixelAccessor<Color, uint> pixels, Rectangle destination, bool whiteIsZero)
+        {
+            var offset = 0;
+
+            for (var y = 0; y < destination.Height; y++)
+            {
+                for (var x = 0; x < destination.Width; x++)
+                {
+                    var color = default(Color);
+
+                    var i = whiteIsZero ? (byte)(255 - imageData[offset]) : imageData[offset];
+                    color.PackFromBytes(i, i, i, 255);
+
+                    pixels[x + destination.Left, y + destination.Top] = color;
+                    offset++;
                 }
             }
         }

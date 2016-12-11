@@ -294,9 +294,11 @@ namespace CorePhotoInfo.Tiff
                         var stripLength = (int)stripByteCounts[stripIndex];
                         var data = await TiffDecompressor.DecompressStreamAsync(_stream, compression, stripLength, sizeOfStrip);
 
+                        var stripHeight = stripIndex < stripOffsets.Length - 1 ? (int)rowsPerStrip : height % rowsPerStrip;
+
                         using (var pixels = image.Lock())
                         {
-                            imageDecoder(data, pixels, new Rectangle(0, stripIndex * rowsPerStrip, width, rowsPerStrip));
+                            imageDecoder(data, pixels, new Rectangle(0, stripIndex * rowsPerStrip, width, stripHeight));
                         }
                     }
 
