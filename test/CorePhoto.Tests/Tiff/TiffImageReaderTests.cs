@@ -1,5 +1,6 @@
 using System.IO;
 using System.Threading.Tasks;
+using CorePhoto.Colors.PackedPixel;
 using CorePhoto.IO;
 using CorePhoto.Tests.Helpers;
 using CorePhoto.Tiff;
@@ -118,12 +119,14 @@ namespace CorePhoto.Tests.Tiff
 
             var decoder = await TiffImageReader.GetImageDecoderAsync(ifd, stream, ByteOrder.LittleEndian);
 
-            Image image = new Image(width, height);
+            Image<Rgb888,Struct888> imageRgb = new Image<Rgb888,Struct888>(width, height);
 
-            using (var pixels = image.Lock())
+            using (var pixels = imageRgb.Lock())
             {
                 decoder(imageData, pixels, new Rectangle(0, 0, width, height));
             }
+
+            Image<Color,uint> image = imageRgb.To<Color,uint>();            
 
             using (var pixels = image.Lock())
             {

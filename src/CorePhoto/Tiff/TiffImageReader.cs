@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using CorePhoto.Colors.PackedPixel;
 using CorePhoto.IO;
 using ImageSharp;
 
@@ -8,7 +9,7 @@ namespace CorePhoto.Tiff
 {
     public static class TiffImageReader
     {
-        public async static Task<Action<byte[], PixelAccessor<Color, uint>, Rectangle>> GetImageDecoderAsync(TiffIfd ifd, Stream stream, ByteOrder byteOrder)
+        public async static Task<Action<byte[], PixelAccessor<Rgb888, Struct888>, Rectangle>> GetImageDecoderAsync(TiffIfd ifd, Stream stream, ByteOrder byteOrder)
         {
             var photometricInterpretation = ifd.GetPhotometricInterpretation(byteOrder);
 
@@ -36,7 +37,12 @@ namespace CorePhoto.Tiff
                         var bitsPerSample = await ifd.ReadBitsPerSampleAsync(stream, byteOrder);
 
                         if (bitsPerSample.Length >= 3 && bitsPerSample[0] == 8 && bitsPerSample[1] == 8 && bitsPerSample[2] == 8)
-                            return (imageData, pixels, destination) => DecodeImageData_Rgb_888(imageData, pixels, destination, samplesPerPixel);
+                        {
+                            if (samplesPerPixel == 3)
+                                return (imageData, pixels, destination) => DecodeImageData_Rgb_888(imageData, pixels, destination);
+                            else
+                                return (imageData, pixels, destination) => DecodeImageData_Rgb_888_ExtraSamples(imageData, pixels, destination, samplesPerPixel);
+                        }
                     }
                     break;
                 default:
@@ -59,7 +65,13 @@ namespace CorePhoto.Tiff
             }
         }
 
-        private static void DecodeImageData_Rgb_888(byte[] imageData, PixelAccessor<Color, uint> pixels, Rectangle destination, int bytesPerPixel)
+        private static void DecodeImageData_Rgb_888(byte[] imageData, PixelAccessor<Rgb888, Struct888> pixels, Rectangle destination)
+        {
+            var srcPixels = new PixelArea<Rgb888, Struct888>(destination.Width, destination.Height, imageData, ComponentOrder.XYZ);
+            pixels.CopyFrom(srcPixels, destination.Y, destination.X);
+        }
+
+        private static void DecodeImageData_Rgb_888_ExtraSamples(byte[] imageData, PixelAccessor<Rgb888, Struct888> pixels, Rectangle destination, int bytesPerPixel)
         {
             var offset = 0;
 
@@ -67,7 +79,7 @@ namespace CorePhoto.Tiff
             {
                 for (var x = 0; x < destination.Width; x++)
                 {
-                    var color = default(Color);
+                    var color = default(Rgb888);
 
                     var r = imageData[offset];
                     var g = imageData[offset + 1];
@@ -80,7 +92,7 @@ namespace CorePhoto.Tiff
             }
         }
 
-        private static void DecodeImageData_Grayscale_8(byte[] imageData, PixelAccessor<Color, uint> pixels, Rectangle destination, bool whiteIsZero)
+        private static void DecodeImageData_Grayscale_8(byte[] imageData, PixelAccessor<Rgb888, Struct888> pixels, Rectangle destination, bool whiteIsZero)
         {
             var offset = 0;
 
@@ -88,7 +100,7 @@ namespace CorePhoto.Tiff
             {
                 for (var x = 0; x < destination.Width; x++)
                 {
-                    var color = default(Color);
+                    var color = default(Rgb888);
 
                     var i = whiteIsZero ? (byte)(255 - imageData[offset]) : imageData[offset];
                     color.PackFromBytes(i, i, i, 255);

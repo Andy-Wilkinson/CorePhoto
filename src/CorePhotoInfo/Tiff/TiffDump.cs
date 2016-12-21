@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using CorePhoto.Dng;
 using System;
 using ImageSharp;
+using CorePhoto.Colors.PackedPixel;
 
 namespace CorePhotoInfo.Tiff
 {
@@ -284,7 +285,7 @@ namespace CorePhotoInfo.Tiff
 
                 if (stripOffsets != null && stripByteCounts != null)
                 {
-                    var image = new Image(width, height);
+                    var image = new Image<Rgb888, Struct888>(width, height);
 
                     for (int stripIndex = 0; stripIndex < stripOffsets.Length; stripIndex++)
                     {
@@ -294,7 +295,7 @@ namespace CorePhotoInfo.Tiff
                         var stripLength = (int)stripByteCounts[stripIndex];
                         var data = await TiffDecompressor.DecompressStreamAsync(_stream, compression, stripLength, sizeOfStrip);
 
-                        var stripHeight = stripIndex < stripOffsets.Length - 1 ? (int)rowsPerStrip : height % rowsPerStrip;
+                        var stripHeight = stripIndex < stripOffsets.Length - 1 || height % rowsPerStrip == 0 ? (int)rowsPerStrip : height % rowsPerStrip;
 
                         using (var pixels = image.Lock())
                         {
@@ -306,7 +307,7 @@ namespace CorePhotoInfo.Tiff
 
                     using (FileStream outputStream = File.OpenWrite(filename))
                     {
-                        image.Save(outputStream);
+                        image.To<Color, uint>().Save(outputStream);
                     }
 
                     _report.WriteImage(new FileInfo(filename));
