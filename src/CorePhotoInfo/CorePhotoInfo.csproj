@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <DebugType>portable</DebugType>
+    <AssemblyName>CorePhotoInfo</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>CorePhotoInfo</PackageId>
+    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
+    <RuntimeFrameworkVersion>1.1.0</RuntimeFrameworkVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">
+    <ProjectReference Include="..\CorePhoto\CorePhoto.csproj" />
+    <PackageReference Include="ImageSharp" Version="1.0.0-alpha-*" />
+  </ItemGroup>
+
+</Project>
