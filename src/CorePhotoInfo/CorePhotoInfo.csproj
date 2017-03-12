@@ -8,12 +8,19 @@
     <PackageId>CorePhotoInfo</PackageId>
     <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
     <RuntimeFrameworkVersion>1.1.0</RuntimeFrameworkVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">
-    <ProjectReference Include="..\CorePhoto\CorePhoto.csproj" />
-    <PackageReference Include="ImageSharp" Version="1.0.0-alpha2-00158" />
-    <PackageReference Include="ImageSharp.Formats.Jpeg" Version="1.0.0-alpha2-00158" />
+  <ItemGroup>
+    <PackageReference Include="System.Buffers" Version="4.0.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.0.0" />
+    <PackageReference Include="System.Numerics.Vectors" Version="4.1.1" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\..\forks\ImageSharp\src\ImageSharp\**\*.cs" Exclude="..\..\..\forks\ImageSharp\src\ImageSharp\obj\**\*.cs" />
+    <Compile Include="..\..\..\forks\ImageSharp\src\ImageSharp.Formats.Tiff\**\*.cs" Exclude="..\..\..\forks\ImageSharp\src\ImageSharp.Formats.Tiff\obj\**\*.cs" />
   </ItemGroup>
 
 </Project>
