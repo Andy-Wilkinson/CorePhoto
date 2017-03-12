@@ -285,7 +285,7 @@ namespace CorePhotoInfo.Tiff
 
                 if (stripOffsets != null && stripByteCounts != null)
                 {
-                    var image = new Image<Rgb888, Struct888>(width, height);
+                    var image = new Image<Rgb888>(width, height);
 
                     for (int stripIndex = 0; stripIndex < stripOffsets.Length; stripIndex++)
                     {
@@ -307,7 +307,7 @@ namespace CorePhotoInfo.Tiff
 
                     using (FileStream outputStream = File.OpenWrite(filename))
                     {
-                        image.To<Color, uint>().Save(outputStream);
+                        image.To<Color>().Save(outputStream);
                     }
 
                     _report.WriteImage(new FileInfo(filename));

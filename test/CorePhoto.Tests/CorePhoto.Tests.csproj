@@ -19,7 +19,8 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0-beta5-build1225" />
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.1.1" />
     <PackageReference Include="xunit" Version="2.2.0-beta5-build3474" />
-    <PackageReference Include="ImageSharp" Version="1.0.0-alpha-*" />
+    <PackageReference Include="ImageSharp" Version="1.0.0-alpha2-00158" />
+    <PackageReference Include="ImageSharp.Formats.Jpeg" Version="1.0.0-alpha2-00158" />
   </ItemGroup>
 
   <ItemGroup>

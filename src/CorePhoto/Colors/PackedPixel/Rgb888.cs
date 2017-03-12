@@ -4,7 +4,7 @@ using ImageSharp;
 
 namespace CorePhoto.Colors.PackedPixel
 {
-    public struct Rgb888 : IPackedPixel<Struct888>, IEquatable<Rgb888>
+    public struct Rgb888 : IPixel<Rgb888>, IPackedVector<Struct888>
     {
         private static readonly Vector3 MaxBytes = new Vector3(255);
         private static readonly Vector4 MaxBytes4 = new Vector4(255);
@@ -32,6 +32,8 @@ namespace CorePhoto.Colors.PackedPixel
         }
 
         public Struct888 PackedValue { get; set; }
+
+        public BulkPixelOperations<Rgb888> CreateBulkOperations() => new BulkPixelOperations<Rgb888>();
 
         public byte R
         {
@@ -95,24 +97,28 @@ namespace CorePhoto.Colors.PackedPixel
             this.PackedValue = Pack(x, y, z);
         }
 
-        /// <inheritdoc/>
-        public void ToBytes(byte[] bytes, int startIndex, ComponentOrder componentOrder)
+        public void ToXyzBytes(byte[] bytes, int startIndex)
         {
-            switch (componentOrder)
-            {
-                case ComponentOrder.ZYX:
-                    bytes[startIndex] = this.B;
-                    bytes[startIndex + 1] = this.G;
-                    bytes[startIndex + 2] = this.R;
-                    break;
-                case ComponentOrder.XYZ:
-                    bytes[startIndex] = this.R;
-                    bytes[startIndex + 1] = this.G;
-                    bytes[startIndex + 2] = this.B;
-                    break;
-                default:
-                    throw new NotSupportedException();
-            }
+            bytes[startIndex] = this.R;
+            bytes[startIndex + 1] = this.G;
+            bytes[startIndex + 2] = this.B;
+        }
+
+        public void ToXyzwBytes(byte[] bytes, int startIndex)
+        {
+            throw new NotSupportedException();
+        }
+
+        public void ToZyxBytes(byte[] bytes, int startIndex)
+        {
+            bytes[startIndex] = this.B;
+            bytes[startIndex + 1] = this.G;
+            bytes[startIndex + 2] = this.R;
+        }
+
+        public void ToZyxwBytes(byte[] bytes, int startIndex)
+        {
+            throw new NotSupportedException();
         }
 
         public override bool Equals(object obj)

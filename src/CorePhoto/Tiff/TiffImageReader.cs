@@ -9,7 +9,7 @@ namespace CorePhoto.Tiff
 {
     public static class TiffImageReader
     {
-        public async static Task<Action<byte[], PixelAccessor<Rgb888, Struct888>, Rectangle>> GetImageDecoderAsync(TiffIfd ifd, Stream stream, ByteOrder byteOrder)
+        public async static Task<Action<byte[], PixelAccessor<Rgb888>, Rectangle>> GetImageDecoderAsync(TiffIfd ifd, Stream stream, ByteOrder byteOrder)
         {
             var photometricInterpretation = ifd.GetPhotometricInterpretation(byteOrder);
 
@@ -65,13 +65,13 @@ namespace CorePhoto.Tiff
             }
         }
 
-        private static void DecodeImageData_Rgb_888(byte[] imageData, PixelAccessor<Rgb888, Struct888> pixels, Rectangle destination)
+        private static void DecodeImageData_Rgb_888(byte[] imageData, PixelAccessor<Rgb888> pixels, Rectangle destination)
         {
-            var srcPixels = new PixelArea<Rgb888, Struct888>(destination.Width, destination.Height, imageData, ComponentOrder.XYZ);
+            var srcPixels = new PixelArea<Rgb888>(destination.Width, destination.Height, imageData, ComponentOrder.Xyz);
             pixels.CopyFrom(srcPixels, destination.Y, destination.X);
         }
 
-        private static void DecodeImageData_Rgb_888_ExtraSamples(byte[] imageData, PixelAccessor<Rgb888, Struct888> pixels, Rectangle destination, int bytesPerPixel)
+        private static void DecodeImageData_Rgb_888_ExtraSamples(byte[] imageData, PixelAccessor<Rgb888> pixels, Rectangle destination, int bytesPerPixel)
         {
             var offset = 0;
 
@@ -92,7 +92,7 @@ namespace CorePhoto.Tiff
             }
         }
 
-        private static void DecodeImageData_Grayscale_8(byte[] imageData, PixelAccessor<Rgb888, Struct888> pixels, Rectangle destination, bool whiteIsZero)
+        private static void DecodeImageData_Grayscale_8(byte[] imageData, PixelAccessor<Rgb888> pixels, Rectangle destination, bool whiteIsZero)
         {
             var offset = 0;
 

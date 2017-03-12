@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
-    <PackageReference Include="ImageSharp" Version="1.0.0-alpha-*" />
+    <PackageReference Include="ImageSharp" Version="1.0.0-alpha2-00158" />
   </ItemGroup>
 
 </Project>

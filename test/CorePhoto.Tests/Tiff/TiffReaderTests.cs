@@ -264,7 +264,7 @@ namespace CorePhoto.Tests.Tiff
 
         [Theory]
         [MemberDataAttribute(nameof(ByteOrderValues))]
-        public async Task ReadSubIfdReferencesAsync_ReadsCorrectly(ByteOrder byteOrder)
+        public async Task ReadSubIfdReferencesAsync_ReadsCorrectlyWithNoSubIfds(ByteOrder byteOrder)
         {
             var stream = new StreamBuilder(byteOrder).ToStream();
 

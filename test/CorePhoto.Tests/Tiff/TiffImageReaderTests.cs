@@ -119,14 +119,14 @@ namespace CorePhoto.Tests.Tiff
 
             var decoder = await TiffImageReader.GetImageDecoderAsync(ifd, stream, ByteOrder.LittleEndian);
 
-            Image<Rgb888,Struct888> imageRgb = new Image<Rgb888,Struct888>(width, height);
+            Image<Rgb888> imageRgb = new Image<Rgb888>(width, height);
 
             using (var pixels = imageRgb.Lock())
             {
                 decoder(imageData, pixels, new Rectangle(0, 0, width, height));
             }
 
-            Image<Color,uint> image = imageRgb.To<Color,uint>();            
+            Image<Color> image = imageRgb.To<Color>();
 
             using (var pixels = image.Lock())
             {
