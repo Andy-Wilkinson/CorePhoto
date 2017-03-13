@@ -35,13 +35,13 @@ namespace CorePhotoInfo.Tiff
             _report.WriteSubheader("TiffHeader");
             _report.WriteLine("Byte order       : {0}", _tiffDecoder.IsLittleEndian ? "Little Endian" : "Big Endian");
 
-            TiffIfd ifd = _tiffDecoder.ReadIfd(firstIfdOffset);
-            WriteTiffIfdInfo(ifd, "IFD ", 0, _tagDictionary);
+            WriteTiffIfdInfo(firstIfdOffset, "IFD ", 0, _tagDictionary);
         }
 
-        private void WriteTiffIfdInfo(TiffIfd ifd, string ifdPrefix, int? ifdId, Dictionary<int, string> tagDictionary)
+        private void WriteTiffIfdInfo(uint offset, string ifdPrefix, int? ifdId, Dictionary<int, string> tagDictionary)
         {
-            _report.WriteSubheader($"{ifdPrefix}{ifdId}");
+            TiffIfd ifd = _tiffDecoder.ReadIfd(offset);
+            _report.WriteSubheader($"{ifdPrefix}{ifdId} (Offset = {offset})");
 
             // Write the IFD dump
 
@@ -74,10 +74,7 @@ namespace CorePhotoInfo.Tiff
             // Write the next IFD
 
             if (ifd.NextIfdOffset != 0)
-            {
-                TiffIfd nextIfd = _tiffDecoder.ReadIfd(ifd.NextIfdOffset);
-                WriteTiffIfdInfo(nextIfd, ifdPrefix, ifdId + 1, _tagDictionary);
-            }
+                WriteTiffIfdInfo(ifd.NextIfdOffset, ifdPrefix, ifdId + 1, _tagDictionary);
         }
 
         private void WriteTiffIfdEntries(TiffIfd ifd, Dictionary<int, string> tagDictionary)
