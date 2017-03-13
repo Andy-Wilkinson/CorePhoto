@@ -212,38 +212,38 @@ namespace CorePhotoInfo.Tiff
                     }
                 case TiffType.Ascii:
                     return "\"" + _tiffDecoder.ReadString(ref entry) + "\"";
-                // case TiffType.Rational:
-                //     if (entry.Count == 1)
-                //         return (await entry.ReadRationalAsync(_stream, byteOrder)).ToString();
-                //     else
-                //     {
-                //         var array = await entry.ReadRationalArrayAsync(_stream, byteOrder);
-                //         return ConvertArrayToString(array);
-                //     }
-                // case TiffType.SRational:
-                //     if (entry.Count == 1)
-                //         return (await entry.ReadSignedRationalAsync(_stream, byteOrder)).ToString();
-                //     else
-                //     {
-                //         var array = await entry.ReadSignedRationalArrayAsync(_stream, byteOrder);
-                //         return ConvertArrayToString(array);
-                //     }
-                // case TiffType.Float:
-                //     if (entry.Count == 1)
-                //         return (await entry.ReadFloatAsync(_stream, byteOrder)).ToString();
-                //     else
-                //     {
-                //         var array = await entry.ReadFloatArrayAsync(_stream, byteOrder);
-                //         return ConvertArrayToString(array);
-                //     }
-                // case TiffType.Double:
-                //     if (entry.Count == 1)
-                //         return (await entry.ReadDoubleAsync(_stream, byteOrder)).ToString();
-                //     else
-                //     {
-                //         var array = await entry.ReadDoubleArrayAsync(_stream, byteOrder);
-                //         return ConvertArrayToString(array);
-                //     }
+                case TiffType.Rational:
+                    if (entry.Count == 1)
+                        return _tiffDecoder.ReadUnsignedRational(ref entry).ToString();
+                    else
+                    {
+                        var array = _tiffDecoder.ReadUnsignedRationalArray(ref entry);
+                        return ConvertArrayToString(array);
+                    }
+                case TiffType.SRational:
+                    if (entry.Count == 1)
+                        return _tiffDecoder.ReadSignedRational(ref entry).ToString();
+                    else
+                    {
+                        var array = _tiffDecoder.ReadSignedRationalArray(ref entry);
+                        return ConvertArrayToString(array);
+                    }
+                case TiffType.Float:
+                    if (entry.Count == 1)
+                        return _tiffDecoder.ReadFloat(ref entry).ToString();
+                    else
+                    {
+                        var array = _tiffDecoder.ReadFloatArray(ref entry);
+                        return ConvertArrayToString(array);
+                    }
+                case TiffType.Double:
+                    if (entry.Count == 1)
+                        return _tiffDecoder.ReadDouble(ref entry).ToString();
+                    else
+                    {
+                        var array = _tiffDecoder.ReadDoubleArray(ref entry);
+                        return ConvertArrayToString(array);
+                    }
                 case TiffType.Undefined:
                     return "Undefined";
                 default:
