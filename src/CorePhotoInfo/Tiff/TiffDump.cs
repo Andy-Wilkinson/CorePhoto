@@ -49,7 +49,7 @@ namespace CorePhotoInfo.Tiff
 
             // Decode the image
 
-            // await DecodeImage(ifd, byteOrder, $"{ifdPrefix}{ifdId}");
+            DecodeImage(ifd, $"{ifdPrefix}{ifdId}");
 
             // Write the EXIF IFD
 
@@ -101,82 +101,30 @@ namespace CorePhotoInfo.Tiff
         {
             switch (entry.Tag)
             {
-        //         // Baseline TIFF fields
+                // Use named enums if known
 
-        //         case TiffTags.Artist:
-        //             return await ifd.ReadArtistAsync(_stream, byteOrder);
-        //         case TiffTags.BitsPerSample:
-        //             return await ifd.ReadBitsPerSampleAsync(_stream, byteOrder);
-        //         case TiffTags.CellLength:
-        //             return ifd.GetCellLength(byteOrder);
-        //         case TiffTags.CellWidth:
-        //             return ifd.GetCellWidth(byteOrder);
-        //         case TiffTags.ColorMap:
-        //             return await ifd.ReadColorMapAsync(_stream, byteOrder);
-        //         case TiffTags.Compression:
-        //             return ifd.GetCompression(byteOrder);
-        //         case TiffTags.Copyright:
-        //             return await ifd.ReadCopyrightAsync(_stream, byteOrder);
-        //         case TiffTags.DateTime:
-        //             return await ifd.ReadDateTimeAsync(_stream, byteOrder);
-        //         case TiffTags.ExtraSamples:
-        //             return await ifd.ReadExtraSamplesAsync(_stream, byteOrder);
-        //         case TiffTags.FillOrder:
-        //             return ifd.GetFillOrder(byteOrder);
-        //         case TiffTags.FreeByteCounts:
-        //             return await ifd.ReadFreeByteCountsAsync(_stream, byteOrder);
-        //         case TiffTags.FreeOffsets:
-        //             return await ifd.ReadFreeOffsetsAsync(_stream, byteOrder);
-        //         case TiffTags.GrayResponseCurve:
-        //             return await ifd.ReadGrayResponseCurveAsync(_stream, byteOrder);
-        //         case TiffTags.GrayResponseUnit:
-        //             return ifd.GetGrayResponseUnit(byteOrder);
-        //         case TiffTags.HostComputer:
-        //             return await ifd.ReadHostComputerAsync(_stream, byteOrder);
-        //         case TiffTags.ImageDescription:
-        //             return await ifd.ReadImageDescriptionAsync(_stream, byteOrder);
-        //         case TiffTags.ImageLength:
-        //             return ifd.GetImageLength(byteOrder);
-        //         case TiffTags.ImageWidth:
-        //             return ifd.GetImageWidth(byteOrder);
-        //         case TiffTags.Make:
-        //             return await ifd.ReadMakeAsync(_stream, byteOrder);
-        //         case TiffTags.MaxSampleValue:
-        //             return await ifd.ReadMaxSampleValueAsync(_stream, byteOrder);
-        //         case TiffTags.MinSampleValue:
-        //             return await ifd.ReadMinSampleValueAsync(_stream, byteOrder);
-        //         case TiffTags.Model:
-        //             return await ifd.ReadModelAsync(_stream, byteOrder);
-        //         case TiffTags.NewSubfileType:
-        //             return ifd.GetNewSubfileType(byteOrder);
-        //         case TiffTags.Orientation:
-        //             return ifd.GetOrientation(byteOrder);
-        //         case TiffTags.PhotometricInterpretation:
-        //             return ifd.GetPhotometricInterpretation(byteOrder);
-        //         case TiffTags.PlanarConfiguration:
-        //             return ifd.GetPlanarConfiguration(byteOrder);
-        //         case TiffTags.ResolutionUnit:
-        //             return ifd.GetResolutionUnit(byteOrder);
-        //         case TiffTags.RowsPerStrip:
-        //             return ifd.GetRowsPerStrip(byteOrder);
-        //         case TiffTags.SamplesPerPixel:
-        //             return ifd.GetSamplesPerPixel(byteOrder);
-        //         case TiffTags.Software:
-        //             return await ifd.ReadSoftwareAsync(_stream, byteOrder);
-        //         case TiffTags.StripByteCounts:
-        //             return await ifd.ReadStripByteCountsAsync(_stream, byteOrder);
-        //         case TiffTags.StripOffsets:
-        //             return await ifd.ReadStripOffsetsAsync(_stream, byteOrder);
-        //         case TiffTags.SubfileType:
-        //             return ifd.GetSubfileType(byteOrder);
-        //         case TiffTags.Threshholding:
-        //             return ifd.GetThreshholding(byteOrder);
-        //         case TiffTags.XResolution:
-        //             return await ifd.ReadXResolutionAsync(_stream, byteOrder);
-        //         case TiffTags.YResolution:
-        //             return await ifd.ReadYResolutionAsync(_stream, byteOrder);
+                case TiffTags.Compression:
+                    return (TiffCompression)_tiffDecoder.ReadUnsignedInteger(ref entry);
+                case TiffTags.ExtraSamples:
+                    return (TiffExtraSamples)_tiffDecoder.ReadUnsignedInteger(ref entry);
+                case TiffTags.FillOrder:
+                    return (TiffFillOrder)_tiffDecoder.ReadUnsignedInteger(ref entry);
+                case TiffTags.NewSubfileType:
+                    return (TiffNewSubfileType)_tiffDecoder.ReadUnsignedInteger(ref entry);
+                case TiffTags.Orientation:
+                    return (TiffOrientation)_tiffDecoder.ReadUnsignedInteger(ref entry);
+                case TiffTags.PhotometricInterpretation:
+                    return (TiffPhotometricInterpretation)_tiffDecoder.ReadUnsignedInteger(ref entry);
+                case TiffTags.PlanarConfiguration:
+                    return (TiffPlanarConfiguration)_tiffDecoder.ReadUnsignedInteger(ref entry);
+                case TiffTags.ResolutionUnit:
+                    return (TiffResolutionUnit)_tiffDecoder.ReadUnsignedInteger(ref entry);
+                case TiffTags.SubfileType:
+                    return (TiffSubfileType)_tiffDecoder.ReadUnsignedInteger(ref entry);
+                case TiffTags.Threshholding:
+                    return (TiffThreshholding)_tiffDecoder.ReadUnsignedInteger(ref entry);
 
-                // Unknown fields
+                // Other fields
 
                 default:
                     return GetTiffIfdEntryData(entry);
@@ -248,70 +196,74 @@ namespace CorePhotoInfo.Tiff
             }
         }
 
-        // private async Task DecodeImage(TiffIfd ifd, ByteOrder byteOrder, string imageName)
-        // {
-        //     var compression = ifd.GetCompression(byteOrder);
-        //     var photometricInterpretation = ifd.GetPhotometricInterpretation(byteOrder);
-        //     var imageWidth = ifd.GetImageWidth(byteOrder);
-        //     var imageLength = ifd.GetImageLength(byteOrder);
+        private void DecodeImage(TiffIfd ifd, string imageName)
+        {
+            //     var compression = ifd.GetCompression(byteOrder);
+            //     var photometricInterpretation = ifd.GetPhotometricInterpretation(byteOrder);
+            //     var imageWidth = ifd.GetImageWidth(byteOrder);
+            //     var imageLength = ifd.GetImageLength(byteOrder);
 
-        //     if (!TiffDecompressor.SupportsCompression(compression))
-        //     {
-        //         _report.WriteError($"Image compression format {compression} is not supported.");
-        //         return;
-        //     }
-        //     else if (photometricInterpretation == null)
-        //     {
-        //         _report.WriteError($"Photometric interpretation is missing.");
-        //         return;
-        //     }
-        //     else if (!TiffImageReader.SupportsPhotometricInterpretation(photometricInterpretation.Value))
-        //     {
-        //         _report.WriteError($"Photometric interpretation {photometricInterpretation} is not supported.");
-        //         return;
-        //     }
-        //     else
-        //     {
-        //         var stripOffsets = await ifd.ReadStripOffsetsAsync(_stream, byteOrder);
-        //         var stripByteCounts = await ifd.ReadStripByteCountsAsync(_stream, byteOrder);
-        //         var rowsPerStrip = (int)ifd.GetRowsPerStrip(byteOrder);
-        //         var width = (int)imageWidth.Value;
-        //         var height = (int)imageLength.Value;
-        //         var bytesPerRow = width * 3;
-        //         var samplesPerPixel = (int)ifd.GetSamplesPerPixel(byteOrder);
-        //         var imageDecoder = await TiffImageReader.GetImageDecoderAsync(ifd, _stream, byteOrder);
+            //     if (!TiffDecompressor.SupportsCompression(compression))
+            //     {
+            //         _report.WriteError($"Image compression format {compression} is not supported.");
+            //         return;
+            //     }
+            //     else if (photometricInterpretation == null)
+            //     {
+            //         _report.WriteError($"Photometric interpretation is missing.");
+            //         return;
+            //     }
+            //     else if (!TiffImageReader.SupportsPhotometricInterpretation(photometricInterpretation.Value))
+            //     {
+            //         _report.WriteError($"Photometric interpretation {photometricInterpretation} is not supported.");
+            //         return;
+            //     }
+            //     else
+            //     {
+            //         var stripOffsets = await ifd.ReadStripOffsetsAsync(_stream, byteOrder);
+            //         var stripByteCounts = await ifd.ReadStripByteCountsAsync(_stream, byteOrder);
+            //         var rowsPerStrip = (int)ifd.GetRowsPerStrip(byteOrder);
+            //         var width = (int)imageWidth.Value;
+            //         var height = (int)imageLength.Value;
+            //         var bytesPerRow = width * 3;
+            //         var samplesPerPixel = (int)ifd.GetSamplesPerPixel(byteOrder);
+            //         var imageDecoder = await TiffImageReader.GetImageDecoderAsync(ifd, _stream, byteOrder);
 
-        //         if (stripOffsets != null && stripByteCounts != null)
-        //         {
-        //             var image = new Image<Rgb888>(width, height);
+            try
+            {
+                var image = new Image<Color>(10, 10);
+                _tiffDecoder.DecodeImage(ifd, image);
 
-        //             for (int stripIndex = 0; stripIndex < stripOffsets.Length; stripIndex++)
-        //             {
-        //                 var sizeOfStrip = (int)rowsPerStrip * bytesPerRow;
+                //             for (int stripIndex = 0; stripIndex < stripOffsets.Length; stripIndex++)
+                //             {
+                //                 var sizeOfStrip = (int)rowsPerStrip * bytesPerRow;
 
-        //                 _stream.Seek(stripOffsets[stripIndex], SeekOrigin.Begin);
-        //                 var stripLength = (int)stripByteCounts[stripIndex];
-        //                 var data = await TiffDecompressor.DecompressStreamAsync(_stream, compression, stripLength, sizeOfStrip);
+                //                 _stream.Seek(stripOffsets[stripIndex], SeekOrigin.Begin);
+                //                 var stripLength = (int)stripByteCounts[stripIndex];
+                //                 var data = await TiffDecompressor.DecompressStreamAsync(_stream, compression, stripLength, sizeOfStrip);
 
-        //                 var stripHeight = stripIndex < stripOffsets.Length - 1 || height % rowsPerStrip == 0 ? (int)rowsPerStrip : height % rowsPerStrip;
+                //                 var stripHeight = stripIndex < stripOffsets.Length - 1 || height % rowsPerStrip == 0 ? (int)rowsPerStrip : height % rowsPerStrip;
 
-        //                 using (var pixels = image.Lock())
-        //                 {
-        //                     imageDecoder(data, pixels, new Rectangle(0, stripIndex * rowsPerStrip, width, stripHeight));
-        //                 }
-        //             }
+                //                 using (var pixels = image.Lock())
+                //                 {
+                //                     imageDecoder(data, pixels, new Rectangle(0, stripIndex * rowsPerStrip, width, stripHeight));
+                //                 }
+                //             }
 
-        //             var filename = Path.Combine(_outputDirectory.FullName, imageName + ".png");
+                var filename = Path.Combine(_outputDirectory.FullName, imageName + ".png");
 
-        //             using (FileStream outputStream = File.OpenWrite(filename))
-        //             {
-        //                 image.To<Color>().Save(outputStream);
-        //             }
+                using (FileStream outputStream = File.OpenWrite(filename))
+                {
+                    image.To<Color>().Save(outputStream);
+                }
 
-        //             _report.WriteImage(new FileInfo(filename));
-        //         }
-        //     }
-        // }
+                _report.WriteImage(new FileInfo(filename));
+            }
+            catch (Exception e)
+            {
+                _report.WriteError(e.Message);
+            }
+        }
 
         private string ConvertArrayToString<T>(T[] array)
         {
