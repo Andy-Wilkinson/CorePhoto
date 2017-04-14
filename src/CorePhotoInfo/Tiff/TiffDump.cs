@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System;
 using ImageSharp;
 using ImageSharp.Formats;
+using ImageSharp.Formats.Tiff;
 
 namespace CorePhotoInfo.Tiff
 {
@@ -25,7 +26,7 @@ namespace CorePhotoInfo.Tiff
             _report = reportWriter;
             _outputDirectory = outputDirectory;
 
-            _tiffDecoder = new TiffDecoderCore(stream, false, null);
+            _tiffDecoder = new TiffDecoderCore(stream, false, null, null);
         }
 
         private void WriteTiffInfo()
@@ -231,8 +232,7 @@ namespace CorePhotoInfo.Tiff
 
             try
             {
-                var image = new Image<Color>(10, 10);
-                _tiffDecoder.DecodeImage(ifd, image);
+                var image = _tiffDecoder.DecodeImage<Color>(ifd);
 
                 //             for (int stripIndex = 0; stripIndex < stripOffsets.Length; stripIndex++)
                 //             {
