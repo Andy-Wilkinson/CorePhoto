@@ -199,56 +199,9 @@ namespace CorePhotoInfo.Tiff
 
         private void DecodeImage(TiffIfd ifd, string imageName)
         {
-            //     var compression = ifd.GetCompression(byteOrder);
-            //     var photometricInterpretation = ifd.GetPhotometricInterpretation(byteOrder);
-            //     var imageWidth = ifd.GetImageWidth(byteOrder);
-            //     var imageLength = ifd.GetImageLength(byteOrder);
-
-            //     if (!TiffDecompressor.SupportsCompression(compression))
-            //     {
-            //         _report.WriteError($"Image compression format {compression} is not supported.");
-            //         return;
-            //     }
-            //     else if (photometricInterpretation == null)
-            //     {
-            //         _report.WriteError($"Photometric interpretation is missing.");
-            //         return;
-            //     }
-            //     else if (!TiffImageReader.SupportsPhotometricInterpretation(photometricInterpretation.Value))
-            //     {
-            //         _report.WriteError($"Photometric interpretation {photometricInterpretation} is not supported.");
-            //         return;
-            //     }
-            //     else
-            //     {
-            //         var stripOffsets = await ifd.ReadStripOffsetsAsync(_stream, byteOrder);
-            //         var stripByteCounts = await ifd.ReadStripByteCountsAsync(_stream, byteOrder);
-            //         var rowsPerStrip = (int)ifd.GetRowsPerStrip(byteOrder);
-            //         var width = (int)imageWidth.Value;
-            //         var height = (int)imageLength.Value;
-            //         var bytesPerRow = width * 3;
-            //         var samplesPerPixel = (int)ifd.GetSamplesPerPixel(byteOrder);
-            //         var imageDecoder = await TiffImageReader.GetImageDecoderAsync(ifd, _stream, byteOrder);
-
             try
             {
                 var image = _tiffDecoder.DecodeImage<Color>(ifd);
-
-                //             for (int stripIndex = 0; stripIndex < stripOffsets.Length; stripIndex++)
-                //             {
-                //                 var sizeOfStrip = (int)rowsPerStrip * bytesPerRow;
-
-                //                 _stream.Seek(stripOffsets[stripIndex], SeekOrigin.Begin);
-                //                 var stripLength = (int)stripByteCounts[stripIndex];
-                //                 var data = await TiffDecompressor.DecompressStreamAsync(_stream, compression, stripLength, sizeOfStrip);
-
-                //                 var stripHeight = stripIndex < stripOffsets.Length - 1 || height % rowsPerStrip == 0 ? (int)rowsPerStrip : height % rowsPerStrip;
-
-                //                 using (var pixels = image.Lock())
-                //                 {
-                //                     imageDecoder(data, pixels, new Rectangle(0, stripIndex * rowsPerStrip, width, stripHeight));
-                //                 }
-                //             }
 
                 var filename = Path.Combine(_outputDirectory.FullName, imageName + ".png");
 
