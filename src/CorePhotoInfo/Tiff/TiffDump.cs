@@ -201,13 +201,13 @@ namespace CorePhotoInfo.Tiff
         {
             try
             {
-                var image = _tiffDecoder.DecodeImage<Color>(ifd);
+                var image = _tiffDecoder.DecodeImage<Rgba32>(ifd);
 
                 var filename = Path.Combine(_outputDirectory.FullName, imageName + ".png");
 
                 using (FileStream outputStream = File.OpenWrite(filename))
                 {
-                    image.To<Color>().Save(outputStream);
+                    image.Save(outputStream);
                 }
 
                 _report.WriteImage(new FileInfo(filename));
